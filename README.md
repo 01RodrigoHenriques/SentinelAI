@@ -1,4 +1,4 @@
-# 🛡️ SentinelAI
+# 🛡️ SentinelAI 🛡️
 ### Motor de Análise Comportamental com IA para Logs de Segurança
 
 SentinelAI é um sistema de análise comportamental de logs de segurança focado na deteção de padrões suspeitos através de uma abordagem híbrida:
