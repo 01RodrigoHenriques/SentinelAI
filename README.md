@@ -1,4 +1,4 @@
-# 🛡️ SentinelAI
+# 🛡️ SentinelAI 🛡️
 
 > Motor de Análise Comportamental com IA para Logs de Segurança
 
