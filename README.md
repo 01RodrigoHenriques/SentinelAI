@@ -214,11 +214,11 @@ Ver [GitHub Projects](../../projects) para o estado atual do desenvolvimento.
 | 1 | Parser EVTX + Normalização | ✅ Concluído |
 | 2 | Motor de Regras | ✅ Concluído |
 | 3 | Motor de Anomalias (Isolation Forest) | ✅ Concluído |
-| 4 | Treino do modelo de classificação | 🔄 Em progresso |
-| 5 | Integração Ollama (Mistral local) | 🔄 Em progresso |
-| 6 | Motor de Correlação | 📋 Planeado |
-| 7 | Output JSON estruturado + Relatórios | 📋 Planeado |
-| 8 | Interface CLI interativa | 📋 Planeado |
+| 4 | Treino do modelo de classificação | ✅ Concluído |
+| 5 | Integração Ollama (Mistral local) | ✅ Concluído |
+| 6 | Motor de Correlação | 🔄 Em progresso |
+| 7 | Output JSON estruturado + Relatórios| 🔄 Em progresso |
+| 8 | Interface CLI interativa | 🔄 Em progresso |
 
 ---
 
