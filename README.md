@@ -1,4 +1,4 @@
-# 🛡️ SentinelAI
+# 🛡️ SentinelAI 🛡️
 
 > Motor de Análise Comportamental com IA para Logs de Segurança
 
@@ -122,7 +122,7 @@ SentinelAI/
 
 ```bash
 # Clonar o repositório
-git clone https://github.com/teu-username/SentinelAI.git
+git clone https://github.com/BolinaTec/SentinelAI.git
 cd SentinelAI
 
 # Criar ambiente virtual
