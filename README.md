@@ -325,8 +325,8 @@ Dataset sintetico gerado para desenvolvimento:
 | 7 | Integracao Ollama + Fallback inteligente | Concluido |
 | 8 | Relatorios JSON + TXT | Concluido |
 | 9 | Testes Unitarios (37 testes) | Concluido |
-| 10 | Validacao com logs reais | Em progresso |
-| 11 | Compilacao para executavel (.exe) | Pendente |
+| 10 | Validacao com logs reais | Pendente |
+| 11 | Compilacao para executavel (.exe) | Concluido |
 
 ---
 
