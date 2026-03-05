@@ -1,245 +1,352 @@
-# 🛡️ SentinelAI 🛡️
+# SentinelAI
 
-> Motor de Análise Comportamental com IA para Logs de Segurança
+> Motor de Analise Comportamental com IA para Logs de Seguranca
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
 ![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red)
+![Tests](https://img.shields.io/badge/Testes-37%20passed-brightgreen)
 
-SentinelAI é um sistema de análise comportamental de logs de segurança focado na deteção de padrões suspeitos através de uma abordagem híbrida: **regras determinísticas**, **análise de anomalias**, **correlação de eventos** e **IA local** para explicação técnica estruturada.
+SentinelAI e um sistema de analise comportamental de logs de seguranca focado na detecao de padroes suspeitos atraves de uma abordagem hibrida: **regras deterministicas**, **analise de anomalias com Machine Learning**, **correlacao temporal de eventos** e **IA local** para producao de relatorios tecnicos estruturados.
 
-O objetivo não é apenas detetar eventos isolados, mas identificar **cadeias comportamentais** associadas a atividade maliciosa — como persistência, execução suspeita de comandos ou movimento lateral.
-
----
-
-## 📌 Índice
-
-- [Objetivo](#-objetivo)
-- [Arquitetura](#-arquitetura)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Instalação](#-instalação)
-- [Utilização](#-utilização)
-- [Modelo de Deteção](#-modelo-de-deteção)
-- [Explicabilidade com IA](#-explicabilidade-com-ia-ollama)
-- [Datasets](#-datasets)
-- [Roadmap](#-roadmap)
-- [Tecnologias](#-tecnologias)
+O objetivo nao e apenas detetar eventos isolados, mas identificar **cadeias comportamentais** associadas a atividade maliciosa — como movimentos laterais, dump de credenciais, execucao suspeita de codigo ou persistencia no sistema.
 
 ---
 
-## 🎯 Objetivo
+## Indice
 
-Criar um sistema capaz de:
-
-- Analisar logs de segurança (Windows/Linux)
-- Construir um baseline de comportamento normal
-- Identificar desvios comportamentais
-- Correlacionar cadeias de eventos
-- Produzir scoring de risco (0-100)
-- Gerar relatórios técnicos estruturados com mapeamento MITRE ATT&CK
-- Apoiar equipas SOC na investigação de incidentes
+- [Objetivo](#objetivo)
+- [Arquitetura](#arquitetura)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Instalacao](#instalacao)
+- [Utilizacao](#utilizacao)
+- [Motores de Detecao](#motores-de-detecao)
+- [Score de Risco por Host](#score-de-risco-por-host)
+- [Correlacao de Eventos](#correlacao-de-eventos)
+- [Explicabilidade com IA](#explicabilidade-com-ia)
+- [Relatorios](#relatorios)
+- [Testes](#testes)
+- [Datasets](#datasets)
+- [Roadmap](#roadmap)
+- [Tecnologias](#tecnologias)
 
 ---
 
-## 🧠 Arquitetura
+## Objetivo
+
+Desenvolver um sistema capaz de:
+
+- Analisar logs de seguranca em formato Windows (Sysmon/EVTX) e Linux (auditd)
+- Construir um baseline de comportamento normal e identificar desvios
+- Correlacionar sequencias de eventos suspeitos em janelas temporais
+- Calcular um score de risco individual por host (0-100)
+- Gerar relatorios tecnicos com mapeamento MITRE ATT&CK
+- Apoiar equipas SOC na investigacao e triagem de incidentes
+
+---
+
+## Arquitetura
 
 ```
-Logs (.evtx / .csv / .json)
-        │
-        ▼
-┌──────────────────┐
-│   parser.py      │  ← Ingestão + Parsing (EVTX → JSON)
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│  Normalização    │  ← Schema comum, deduplicação, ordenação temporal
-└────────┬─────────┘
-         │
-         ▼
-┌────────────────────────────────────┐
-│         Motor de Deteção           │
-│  ┌──────────┐  ┌───────────────┐   │
-│  │  Regras  │  │   Anomalias   │   │
-│  └──────────┘  └───────────────┘   │
-│         ┌──────────────┐           │
-│         │  Correlação  │           │
-│         └──────────────┘           │
-└────────────────┬───────────────────┘
-                 │
-                 ▼
-┌──────────────────────────────────┐
-│         Risk Scoring             │  ← Score 0-100
-└────────────────┬─────────────────┘
-                 │
-                 ▼
-┌──────────────────────────────────┐
-│    Explicabilidade (Ollama)      │  ← Mistral local
-│    Mapeamento MITRE ATT&CK       │
-│    Relatório JSON estruturado    │
-└──────────────────────────────────┘
+Logs (JSONL / EVTX / CSV)
+         |
+         v
++------------------+
+|   parser.py      |  <- Ingestao, parsing e normalizacao
++--------+---------+
+         |
+         v
++--------------------------------------------+
+|            Motor de Detecao               |
+|  +------------+  +----------------------+ |
+|  |  Regras    |  |  Anomalias (ML)      | |
+|  | (9 regras) |  |  Isolation Forest +  | |
+|  |            |  |  RandomForest        | |
+|  +------------+  +----------------------+ |
+|         +-------------------+             |
+|         |   Correlacao      |             |
+|         |  (6 cadeias MITRE)|             |
+|         +-------------------+             |
++--------------------+-----------------------+
+                     |
+                     v
++--------------------------------------------+
+|         Score de Risco por Host            |
+|         Ranking 0-100 por host             |
++--------------------+-----------------------+
+                     |
+                     v
++--------------------------------------------+
+|         Analise Global com IA              |
+|         Ollama + Mistral (local)           |
+|         Fallback inteligente               |
++--------------------------------------------+
+                     |
+                     v
++--------------------------------------------+
+|         Relatorios                         |
+|         report_TIMESTAMP.json             |
+|         report_TIMESTAMP.txt              |
++--------------------------------------------+
 ```
 
 ---
 
-## 📁 Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 SentinelAI/
-│
-├── src/
-│   ├── parser.py          # Ingestão e parsing de ficheiros .evtx
-│   ├── sentinel.py        # Motor principal (regras + anomalias)
-│   └── train.py           # Treino do modelo de classificação
-│
-├── models/
-│   ├── security_model.pkl # Modelo treinado (RandomForest)
-│   └── vectorizer.pkl     # Vetorizador de texto
-│
-├── logs/
-│   ├── normal/            # Logs de comportamento normal
-│   └── attack/            # Logs de ataques (OTRF Security Datasets)
-│       ├── persistence/
-│       ├── execution/
-│       ├── lateral_movement/
-│       └── credential_access/
-│
-├── output/
-│   └── reports/           # Relatórios JSON gerados
-│
-├── tests/
-│   └── test_parser.py     # Testes unitários
-│
-├── requirements.txt
-├── .gitignore
-└── README.md
+|
++-- sentinel.py          # Motor principal
++-- parser.py            # Ingestao e parsing de logs
++-- train.py             # Treino do modelo ML
++-- correlator.py        # Motor de correlacao de eventos
++-- host_scorer.py       # Score de risco por host
++-- report_writer.py     # Gerador de relatorios TXT
++-- test_sentinel.py     # Testes unitarios (pytest)
+|
++-- models/
+|   +-- security_model.pkl   # Modelo treinado (RandomForest)
+|   +-- vectorizer.pkl        # Vetorizador TF-IDF
+|
++-- logs/
+|   +-- normal/              # Logs de comportamento normal
+|   |   +-- windows/
+|   |   +-- linux/
+|   +-- attack/              # Logs de ataques simulados
+|       +-- persistence/
+|       +-- execution/
+|       +-- lateral_movement/
+|       +-- credential_access/
+|
++-- output/
+|   +-- reports/             # Relatorios JSON + TXT gerados
+|
++-- requirements.txt
++-- .gitignore
++-- README.md
 ```
 
 ---
 
-## ⚙️ Instalação
+## Instalacao
 
 ```bash
-# Clonar o repositório
+# Clonar o repositorio
 git clone https://github.com/BolinaTec/SentinelAI.git
 cd SentinelAI
 
 # Criar ambiente virtual
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
 
-# Instalar dependências
+# Instalar dependencias
 pip install -r requirements.txt
 
-# Instalar Ollama (IA local)
+# Instalar Ollama (IA local) - opcional
 # https://ollama.com/download
 ollama pull mistral
 ```
 
 ---
 
-## 🚀 Utilização
+## Utilizacao
 
 ```bash
-# Analisar logs
-python src/sentinel.py
+# Executar analise completa
+python sentinel.py
 
-# Treinar o modelo
-python src/train.py
+# Treinar o modelo ML
+python train.py
 
-# Exemplo de output
-{
-  "risk_score": 82,
-  "tactic": "Persistence",
-  "technique": "T1053 - Scheduled Task",
-  "summary": "Criação de tarefa agendada após execução suspeita de PowerShell",
-  "confidence": 0.87,
-  "next_steps": ["Isolar o host", "Verificar processos filhos", "Rever logs de rede"]
-}
+# Correr testes unitarios
+python -m pytest test_sentinel.py -v
+```
+
+Exemplo de output em consola:
+
+```
+[1] A analisar logs de ataque (Motor de Regras)...
+    [CRITICAL] Dump de Credenciais (R006) - 18 ocorrencias em 5 hosts
+    [CRITICAL] Reverse Shell Linux (R008) - 29 ocorrencias em 5 hosts
+
+[2] A analisar comportamento anomalo (Motor de Anomalias)...
+    Anomaly Score: 0.19 | MALICIOSO (99%) [PowerShell EncodedCommand]
+
+[3] A correlacionar eventos (Motor de Correlacao)...
+    [CRITICAL] Comprometimento Total de Host Windows (C001) - 5 hosts
+    [CRITICAL] Backdoor Linux Completo (C005) - 5 hosts
+    Total de cadeias detetadas: 28
+
+[4] A calcular score de risco por host...
+    DESKTOP-ABC123    100/100   CRITICO   7 alertas   5 cadeias
+    db-server          84/100   CRITICO   2 alertas   1 cadeia
+
+[5] A gerar analise global com IA...
+    Risk Score Global: 95/100 (CRITICO)
 ```
 
 ---
 
-## 🧩 Modelo de Deteção
+## Motores de Detecao
 
-### 1) Motor de Regras
-Deteções baseadas em padrões conhecidos:
-- Execução suspeita de PowerShell (encoded commands, bypass flags)
-- LOLBins: `rundll32`, `mshta`, `certutil`, `regsvr32`
-- Criação de Scheduled Tasks
-- Alterações a chaves de persistência (`Run`, `RunOnce`)
-- Conexões externas suspeitas
+### Motor de Regras
 
-### 2) Motor de Anomalias
-Baseado em baseline comportamental com:
-- **Isolation Forest** — deteção de outliers
-- **Entropia de Shannon** — deteção de comandos ofuscados
-- Análise de comprimento e complexidade de CommandLines
+Detecoes baseadas em padroes conhecidos (9 regras implementadas):
 
-### 3) Motor de Correlação *(em desenvolvimento)*
-Identificação de padrões multi-evento:
-- `Processo suspeito → Conexão externa → Persistência`
-- `Logon remoto → Execução administrativa → Dump de credenciais`
+| Regra | Descricao | Severidade |
+|-------|-----------|------------|
+| R001 | Persistencia via Chave Run | HIGH |
+| R002 | Criacao de Scheduled Task | HIGH |
+| R003 | LOLBin Detetado (rundll32, certutil, mshta...) | MEDIUM |
+| R004 | PowerShell Suspeito (encoded, bypass, hidden) | HIGH |
+| R005 | Adicao de Utilizador ao Sistema | CRITICAL |
+| R006 | Dump de Credenciais (mimikatz, lsass) | CRITICAL |
+| R007 | Movimento Lateral via WMI ou PsExec | HIGH |
+| R008 | Reverse Shell Linux (/dev/tcp, nc -e) | CRITICAL |
+| R009 | Leitura de Ficheiros de Credenciais Linux | HIGH |
+
+### Motor de Anomalias
+
+Detecao de comportamento anomalo sem assinaturas previas:
+
+- **Isolation Forest** — detecao de outliers por comprimento, entropia e numero de argumentos
+- **RandomForest** — classificador treinado com 440 amostras (normal vs malicioso)
+- **Entropia de Shannon** — identificacao de comandos ofuscados ou codificados em base64
+- Deduplicacao automatica para evitar analises redundantes
+
+### Motor de Correlacao
+
+Identificacao de cadeias de ataque multi-evento com base no framework MITRE ATT&CK:
+
+| Cadeia | Descricao | Risk Score |
+|--------|-----------|------------|
+| C001 | Comprometimento Total Windows (PS + Mimikatz + Persistencia) | 95/100 |
+| C002 | Movimento Lateral Apos Roubo de Credenciais | 90/100 |
+| C003 | Persistencia Apos Execucao LOLBin | 80/100 |
+| C004 | Persistencia Apos Execucao PowerShell | 82/100 |
+| C005 | Backdoor Linux Completo (Reverse Shell + Credential Read) | 95/100 |
+| C006 | Criacao de Conta e Persistencia | 92/100 |
 
 ---
 
-## 🤖 Explicabilidade com IA (Ollama)
+## Score de Risco por Host
 
-Após deteção, o sistema envia o contexto para um modelo **Mistral** local via Ollama e gera:
+Cada host recebe um score individual (0-100) calculado com base em:
 
-- Resumo técnico do incidente
-- Mapeamento MITRE ATT&CK (tática + técnica)
-- Score de risco (0-100)
-- Hipóteses de ataque
-- Próximos passos de investigação
-
-> ⚡ Totalmente local — sem APIs externas, sem custos, sem envio de dados.
+- Peso dos alertas por severidade (CRITICAL: 30pts, HIGH: 15pts, MEDIUM: 5pts)
+- Peso das cadeias de ataque detetadas (CRITICAL: 25pts, HIGH: 12pts)
+- Nivel de risco: CRITICO (>=80), ALTO (>=55), MEDIO (>=30), BAIXO (<30)
 
 ---
 
-## 📊 Datasets
+## Explicabilidade com IA
 
-Os logs de ataque utilizados para treino provêm do **[OTRF Security Datasets](https://github.com/OTRF/Security-Datasets)** — ficheiros `.evtx` de ataques simulados, organizados por técnica MITRE ATT&CK.
+Apos toda a analise, e feita uma unica chamada ao modelo **Mistral** via Ollama local que produz:
+
+- Resumo executivo do incidente
+- Hipotese de ataque narrativa
+- Mapeamento MITRE ATT&CK (taticas e tecnicas)
+- Hosts criticos ordenados por risco
+- Acoes imediatas recomendadas
+
+Em caso de timeout ou indisponibilidade do Ollama, o sistema usa um **fallback inteligente** que calcula todos os campos automaticamente a partir dos dados reais.
+
+> Totalmente local — sem APIs externas, sem custos, sem envio de dados.
 
 ---
 
-## 🗺️ Roadmap
+## Relatorios
 
-Ver [GitHub Projects](../../projects) para o estado atual do desenvolvimento.
+Cada execucao gera automaticamente dois ficheiros em `output/reports/`:
 
-| Fase | Descrição | Estado |
+**JSON** — estruturado para integracao com outras ferramentas:
+
+```json
+{
+  "timestamp": "20260305_104650",
+  "total_alerts": 10,
+  "total_chains": 28,
+  "total_hosts": 10,
+  "ai_analysis": { ... },
+  "host_scores": { ... },
+  "alerts": [ ... ],
+  "attack_chains": [ ... ]
+}
+```
+
+**TXT** — legivel para analistas e orientadores, com sumario executivo, tabela de hosts, alertas ordenados por severidade, cadeias agrupadas por tipo e acoes recomendadas.
+
+---
+
+## Testes
+
+```bash
+python -m pytest test_sentinel.py -v
+# 37 passed in 2.83s
+```
+
+Cobertura de testes:
+
+| Classe | Testes | Descricao |
+|--------|--------|-----------|
+| TestMotorDeRegras | 23 | Positivo + negativo por cada regra |
+| TestMotorDeCorrelacao | 7 | Cadeia completa, incompleta, ordem diferente |
+| TestHostScorer | 5 | Scoring, limites, multiplos hosts |
+| TestReportWriter | 3 | Criacao de ficheiro, seccoes, dados reais |
+
+---
+
+## Datasets
+
+Os logs de ataque utilizados para treino e validacao provem do **[OTRF Security Datasets](https://github.com/OTRF/Security-Datasets)** — ficheiros de ataques simulados organizados por tecnica MITRE ATT&CK, convertidos para formato JSONL.
+
+Dataset sintetico gerado para desenvolvimento:
+
+- 280 eventos de ataque (credential access, execution, lateral movement, persistence)
+- 160 eventos normais (Windows + Linux)
+- 440 eventos no total
+
+---
+
+## Roadmap
+
+| Fase | Descricao | Estado |
 |------|-----------|--------|
-| 1 | Parser EVTX + Normalização | ✅ Concluído |
-| 2 | Motor de Regras | ✅ Concluído |
-| 3 | Motor de Anomalias (Isolation Forest) | ✅ Concluído |
-| 4 | Treino do modelo de classificação | ✅ Concluído |
-| 5 | Integração Ollama (Mistral local) | ✅ Concluído |
-| 6 | Motor de Correlação | ✅ Concluído |
-| 7 | Output JSON estruturado + Relatórios| ✅ Concluído |
-| 8 | Interface CLI interativa | 🔄 Em progresso |
+| 1 | Parser + Normalizacao de logs | Concluido |
+| 2 | Motor de Regras (9 regras) | Concluido |
+| 3 | Motor de Anomalias (Isolation Forest + ML) | Concluido |
+| 4 | Treino do modelo de classificacao | Concluido |
+| 5 | Motor de Correlacao (6 cadeias MITRE) | Concluido |
+| 6 | Score de Risco por Host | Concluido |
+| 7 | Integracao Ollama + Fallback inteligente | Concluido |
+| 8 | Relatorios JSON + TXT | Concluido |
+| 9 | Testes Unitarios (37 testes) | Concluido |
+| 10 | Validacao com logs reais | Em progresso |
+| 11 | Compilacao para executavel (.exe) | Pendente |
 
 ---
 
-## 🛠️ Tecnologias
+## Tecnologias
 
 | Tecnologia | Uso |
 |-----------|-----|
 | Python 3.10+ | Linguagem principal |
-| scikit-learn | Isolation Forest, RandomForest |
+| scikit-learn | Isolation Forest, RandomForest, TF-IDF |
 | pandas / numpy | Processamento de dados |
-| python-evtx | Parsing de ficheiros .evtx |
 | Ollama + Mistral | IA local para explicabilidade |
-| MITRE ATT&CK | Framework de referência |
+| pytest | Testes unitarios |
+| MITRE ATT&CK | Framework de referencia |
 | OTRF Security Datasets | Dados de treino |
 
 ---
 
-## 📄 Licença
+## Licenca
 
 MIT License — ver [LICENSE](LICENSE) para detalhes.
 
 ---
 
-*Projeto académico desenvolvido no âmbito de estágio curricular.*
+*Projeto academico desenvolvido no ambito de estagio curricular.*
