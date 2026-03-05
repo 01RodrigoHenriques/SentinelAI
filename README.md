@@ -216,7 +216,7 @@ Ver [GitHub Projects](../../projects) para o estado atual do desenvolvimento.
 | 3 | Motor de Anomalias (Isolation Forest) | ✅ Concluído |
 | 4 | Treino do modelo de classificação | ✅ Concluído |
 | 5 | Integração Ollama (Mistral local) | ✅ Concluído |
-| 6 | Motor de Correlação | 🔄 Em progresso |
+| 6 | Motor de Correlação | ✅ Concluído |
 | 7 | Output JSON estruturado + Relatórios| 🔄 Em progresso |
 | 8 | Interface CLI interativa | 🔄 Em progresso |
 
