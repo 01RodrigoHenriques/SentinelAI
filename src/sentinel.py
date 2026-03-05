@@ -9,6 +9,8 @@ from sklearn.ensemble import IsolationForest
 from parser import get_events, get_events_from_folder
 from train import predict, check_hard_rules
 from correlator import run_correlation_engine
+from host_scorer import calculate_host_scores, print_host_scores
+from report_writer import generate_txt_report
 
 # --- Configuracao ---
 OLLAMA_URL      = "http://localhost:11434/api/generate"
@@ -389,7 +391,7 @@ def run_anomaly_engine(events: list) -> list:
 # RELATORIO FINAL
 # ============================================================
 
-def save_report(all_alerts: list, correlations: list, ai_analysis: dict):
+def save_report(all_alerts: list, correlations: list, ai_analysis: dict, host_scores: dict = {}):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     from datetime import datetime
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -399,13 +401,19 @@ def save_report(all_alerts: list, correlations: list, ai_analysis: dict):
         "timestamp":      timestamp,
         "total_alerts":   len(all_alerts),
         "total_chains":   len(correlations),
+        "total_hosts":    len(host_scores),
         "ai_analysis":    ai_analysis,
+        "host_scores":    host_scores,
         "alerts":         all_alerts,
         "attack_chains":  correlations,
     }
     with open(path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
-    print(f"\n  [+] Relatorio guardado em: {path}")
+    print(f"\n  [+] Relatorio JSON guardado em: {path}")
+
+    # Relatorio TXT legivel
+    txt_path = path.replace(".json", ".txt")
+    generate_txt_report(all_alerts, correlations, host_scores, ai_analysis, txt_path)
 
 # ============================================================
 # MAIN
@@ -436,8 +444,13 @@ def main():
     print("\n[3] A correlacionar eventos (Motor de Correlacao)...")
     correlations = run_correlation_engine(all_alerts)
 
-    # 4. Analise global com Ollama (uma unica chamada)
-    print("\n[4] A gerar analise global com IA...")
+    # 4. Score de risco por host
+    print("\n[4] A calcular score de risco por host...")
+    host_scores = calculate_host_scores(all_alerts, correlations)
+    print_host_scores(host_scores)
+
+    # 5. Analise global com Ollama (uma unica chamada)
+    print("\n[5] A gerar analise global com IA...")
     # Acordar o Ollama antes da chamada principal
     try:
         requests.post(OLLAMA_URL, json={
@@ -449,12 +462,15 @@ def main():
     ai_analysis = get_global_ai_analysis(all_alerts, correlations)
     print_global_analysis(ai_analysis)
 
-    # 5. Relatorio final
+    # 6. Relatorio final
     print("\n--- Sumario Final ----------------------------------------")
     print(f"  Alertas detetados : {len(all_alerts)}")
     print(f"  Cadeias de ataque : {len(correlations)}")
+    print(f"  Hosts analisados  : {len(host_scores)}")
+    criticos = sum(1 for d in host_scores.values() if d["nivel"] == "CRITICO")
+    print(f"  Hosts criticos    : {criticos}")
     if all_alerts or correlations:
-        save_report(all_alerts, correlations, ai_analysis)
+        save_report(all_alerts, correlations, ai_analysis, host_scores)
 
     print("\n" + "=" * 60)
     print("   Analise Concluida")
