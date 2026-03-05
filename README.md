@@ -105,6 +105,7 @@ SentinelAI/
 +-- host_scorer.py       # Score de risco por host
 +-- report_writer.py     # Gerador de relatorios TXT
 +-- test_sentinel.py     # Testes unitarios (pytest)
++-- python menu.py       # Arrancar o menu
 |
 +-- models/
 |   +-- security_model.pkl   # Modelo treinado (RandomForest)
