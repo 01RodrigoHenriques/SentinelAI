@@ -15,10 +15,18 @@ from report_writer import generate_txt_report
 # --- Configuracao ---
 OLLAMA_URL      = "http://localhost:11434/api/generate"
 OLLAMA_MODEL    = "mistral"
-MODELS_DIR      = "models"
+
+# BASE DIR - funciona como .py e como .exe compilado
+import sys as _sys
+_BASE_DIR = os.path.dirname(_sys.executable) if getattr(_sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
+
+MODELS_DIR      = os.path.join(_BASE_DIR, "models")
 MODEL_PATH      = os.path.join(MODELS_DIR, "security_model.pkl")
 VECTORIZER_PATH = os.path.join(MODELS_DIR, "vectorizer.pkl")
-OUTPUT_DIR      = "output/reports"
+
+# Paths configurados pelo menu via variaveis de ambiente
+OUTPUT_DIR = os.environ.get("SENTINELAI_OUTPUT_DIR", os.path.join(_BASE_DIR, "output", "reports"))
+LOGS_DIR   = os.environ.get("SENTINELAI_LOGS_DIR",   os.path.join(_BASE_DIR, "logs"))
 
 # ============================================================
 # OLLAMA - Analise Global no Final (uma unica chamada)
@@ -428,14 +436,14 @@ def main():
 
     # 1. Motor de Regras
     print("\n[1] A analisar logs de ataque (Motor de Regras)...")
-    attack_events = get_events_from_folder("logs/attack")
+    attack_events = get_events_from_folder(LOGS_DIR)
     if attack_events:
         alerts = run_rule_engine(attack_events)
         all_alerts.extend(alerts)
 
     # 2. Motor de Anomalias + ML
     print("\n[2] A analisar comportamento anomalo (Motor de Anomalias)...")
-    all_events = get_events_from_folder("logs")
+    all_events = get_events_from_folder(LOGS_DIR)
     if all_events:
         alerts = run_anomaly_engine(all_events)
         all_alerts.extend(alerts)

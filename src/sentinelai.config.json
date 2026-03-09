@@ -1,0 +1,5 @@
+{
+  "logs_folder": "C:\\Windows\\System32\\winevt\\Logs",
+  "output_folder": "C:\\Users\\ant\\Documents\\Estagio\\SentinelAI\\src\\output\\reports",
+  "notifications": true
+}

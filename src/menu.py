@@ -20,7 +20,7 @@ from rich.align import Align
 
 console = Console()
 
-VERSION = "v1.1.0"
+VERSION = "v1.2.0"
 
 # ============================================================
 # BASE DIR - Funciona tanto como .py como .exe compilado
@@ -208,7 +208,32 @@ def run_analysis():
     console.print(Rule("[bold cyan]Analise Completa[/bold cyan]"))
     console.print()
 
-    os.environ["SENTINELAI_LOGS_DIR"]   = config.get("logs_folder", "logs")
+    # Verificar se ha logs para analisar
+    logs_dir = config.get("logs_folder", os.path.join(BASE_DIR, "logs"))
+    log_files = []
+    for root_dir, dirs, files in os.walk(logs_dir):
+        for f in files:
+            if f.lower().endswith((".evtx", ".log", ".jsonl", ".audit", ".txt")):
+                log_files.append(os.path.join(root_dir, f))
+
+    if not log_files:
+        console.print(Panel(
+            "[bold yellow]Nenhum ficheiro de log encontrado![/bold yellow]\n\n"
+            f"  Pasta configurada:  [cyan]{logs_dir}[/cyan]\n\n"
+            "  Adiciona ficheiros de log nessa pasta para continuar.\n"
+            "  Formatos suportados:  [dim].evtx  .log  .jsonl  .audit  .txt[/dim]\n\n"
+            "  [dim]Podes alterar a pasta de logs em:[/dim]  [cyan]Configuracoes → Pasta de logs[/cyan]",
+            title="[bold red]Sem Logs[/bold red]",
+            border_style="yellow",
+            padding=(1, 2),
+        ))
+        wait_key()
+        return
+
+    console.print(f"  [green]Ficheiros encontrados:[/green] {len(log_files)}")
+    console.print()
+
+    os.environ["SENTINELAI_LOGS_DIR"]   = logs_dir
     os.environ["SENTINELAI_OUTPUT_DIR"] = config.get("output_folder", OUTPUT_DIR)
 
     try:
@@ -629,6 +654,8 @@ def _generate_pdf(report: dict, pdf_path: str):
 # OPCAO 8 - CONFIGURACOES
 # ============================================================
 
+WINDOWS_LOGS_DIR = r"C:\Windows\System32\winevt\Logs"
+
 def show_settings():
     global config
     while True:
@@ -636,19 +663,24 @@ def show_settings():
         console.print(Rule("[bold cyan]Configuracoes[/bold cyan]"))
         console.print()
 
+        win_logs_ok = os.path.isdir(WINDOWS_LOGS_DIR)
+        win_logs_status = "[green]Disponivel[/green]" if win_logs_ok else "[red]Executa como Administrador[/red]"
+
         table = Table(box=box.SIMPLE, show_header=False, padding=(0, 2))
         table.add_column("Opcao", style="bold cyan", width=6)
-        table.add_column("Chave", style="dim white", width=24)
+        table.add_column("Chave", style="dim white", width=28)
         table.add_column("Valor atual", style="white")
-        table.add_row("[1]", "Pasta de logs",
-                     config.get("logs_folder", ""))
-        table.add_row("[2]", "Pasta de reports",
-                     config.get("output_folder", ""))
+        table.add_row("[1]", "Pasta de logs",          config.get("logs_folder", ""))
+        table.add_row("[2]", "Pasta de reports",        config.get("output_folder", ""))
         table.add_row("[3]", "Notificacoes Windows",
                      "[green]Activas[/green]" if config.get("notifications") else "[red]Inactivas[/red]")
         table.add_row("", "", "")
+        table.add_row("[4]", "Usar logs do Windows",   win_logs_status)
+        table.add_row("", "", "")
         table.add_row("[0]", "Voltar", "")
         console.print(Align.center(table))
+        console.print()
+        console.print(f"  [dim]Opcao 4 aponta para: {WINDOWS_LOGS_DIR}[/dim]")
         console.print()
 
         choice = Prompt.ask("  Opcao", default="0")
@@ -677,6 +709,27 @@ def show_settings():
             state = "activas" if config["notifications"] else "inactivas"
             console.print(f"  [green]Notificacoes {state}.[/green]")
             time.sleep(1.2)
+
+        elif choice == "4":
+            if not win_logs_ok:
+                console.print()
+                console.print(Panel(
+                    "[yellow]Sem permissao para aceder aos logs do Windows.[/yellow]"
+                    "  Fecha o SentinelAI e volta a abrir como Administrador:"
+                    "  [cyan]Botao direito no .exe → Executar como administrador[/cyan]",
+                    border_style="yellow", padding=(0, 2)
+                ))
+            else:
+                config["logs_folder"] = WINDOWS_LOGS_DIR
+                save_config(config)
+                console.print()
+                console.print(Panel(
+                    "[green]Pasta de logs atualizada para os logs do Windows![/green]"
+                    f"  [cyan]{WINDOWS_LOGS_DIR}[/cyan]"
+                    "  O SentinelAI vai agora analisar os logs reais deste sistema.",
+                    border_style="green", padding=(0, 2)
+                ))
+            time.sleep(2.5)
 
         elif choice == "0":
             break
@@ -760,7 +813,45 @@ def _render_report(report: dict, path: str):
 # MAIN
 # ============================================================
 
+def is_admin() -> bool:
+    try:
+        import ctypes
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except Exception:
+        return False
+
+def restart_as_admin():
+    import ctypes
+    import subprocess
+    try:
+        script = sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", script, None, None, 1)
+    except Exception:
+        pass
+    sys.exit(0)
+
+def check_admin():
+    if not is_admin():
+        cls()
+        console.print()
+        console.print(Align.center(Panel(
+            "[bold yellow]SentinelAI precisa de permissoes de Administrador[/bold yellow]"
+            "  Para analisar os logs do Windows e necessario"
+            "  executar o programa como Administrador."
+            "  [cyan][1][/cyan]  Reiniciar como Administrador (recomendado)"
+            "  [dim][0][/dim]  Continuar sem permissoes (funcoes limitadas)",
+            title="[bold red]Permissoes Insuficientes[/bold red]",
+            border_style="yellow",
+            width=60,
+            padding=(1, 2),
+        )))
+        console.print()
+        choice = Prompt.ask("  Opcao", default="1")
+        if choice == "1":
+            restart_as_admin()
+
 def main():
+    check_admin()
     show_splash()
     while True:
         print_header()

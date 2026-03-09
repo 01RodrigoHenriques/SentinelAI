@@ -1,12 +1,13 @@
 # SentinelAI
 
-> Motor de Analise Comportamental com IA para Logs de Seguranca
+> Motor de Analise Comportamental com IA para Logs de Seguranca Windows
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
 ![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red)
 ![Tests](https://img.shields.io/badge/Testes-37%20passed-brightgreen)
+![Model](https://img.shields.io/badge/Modelo-93%25%20accuracy-brightgreen)
 
 SentinelAI e um sistema de analise comportamental de logs de seguranca focado na detecao de padroes suspeitos atraves de uma abordagem hibrida: **regras deterministicas**, **analise de anomalias com Machine Learning**, **correlacao temporal de eventos** e **IA local** para producao de relatorios tecnicos estruturados.
 
@@ -37,7 +38,7 @@ O objetivo nao e apenas detetar eventos isolados, mas identificar **cadeias comp
 
 Desenvolver um sistema capaz de:
 
-- Analisar logs de seguranca em formato Windows (Sysmon/EVTX) e Linux (auditd)
+- Analisar logs de seguranca em formato Windows (Sysmon/EVTX)
 - Construir um baseline de comportamento normal e identificar desvios
 - Correlacionar sequencias de eventos suspeitos em janelas temporais
 - Calcular um score de risco individual por host (0-100)
@@ -49,7 +50,7 @@ Desenvolver um sistema capaz de:
 ## Arquitetura
 
 ```
-Logs (JSONL / EVTX / CSV)
+Logs (EVTX / JSONL)
          |
          v
 +------------------+
@@ -88,6 +89,7 @@ Logs (JSONL / EVTX / CSV)
 |         Relatorios                         |
 |         report_TIMESTAMP.json             |
 |         report_TIMESTAMP.txt              |
+|         report_TIMESTAMP.pdf              |
 +--------------------------------------------+
 ```
 
@@ -98,31 +100,21 @@ Logs (JSONL / EVTX / CSV)
 ```
 SentinelAI/
 |
-+-- sentinel.py          # Motor principal
-+-- parser.py            # Ingestao e parsing de logs
-+-- train.py             # Treino do modelo ML
-+-- correlator.py        # Motor de correlacao de eventos
-+-- host_scorer.py       # Score de risco por host
-+-- report_writer.py     # Gerador de relatorios TXT
-+-- test_sentinel.py     # Testes unitarios (pytest)
-+-- python menu.py       # Arrancar o menu
++-- src/
+|   +-- sentinel.py          # Motor principal
+|   +-- parser.py            # Ingestao e parsing de logs
+|   +-- train.py             # Treino do modelo ML (dados sinteticos)
+|   +-- update_training.py   # Retreino com dados reais (EVTX)
+|   +-- extract_training_data.py  # Extrator de CommandLines de EVTX
+|   +-- correlator.py        # Motor de correlacao de eventos
+|   +-- host_scorer.py       # Score de risco por host
+|   +-- report_writer.py     # Gerador de relatorios TXT
+|   +-- menu.py              # Interface interativa (terminal)
+|   +-- test_sentinel.py     # Testes unitarios (pytest)
 |
 +-- models/
 |   +-- security_model.pkl   # Modelo treinado (RandomForest)
-|   +-- vectorizer.pkl        # Vetorizador TF-IDF
-|
-+-- logs/
-|   +-- normal/              # Logs de comportamento normal
-|   |   +-- windows/
-|   |   +-- linux/
-|   +-- attack/              # Logs de ataques simulados
-|       +-- persistence/
-|       +-- execution/
-|       +-- lateral_movement/
-|       +-- credential_access/
-|
-+-- output/
-|   +-- reports/             # Relatorios JSON + TXT gerados
+|   +-- vectorizer.pkl       # Vetorizador char n-gram
 |
 +-- requirements.txt
 +-- .gitignore
@@ -140,7 +132,6 @@ cd SentinelAI
 
 # Criar ambiente virtual
 python -m venv venv
-source venv/bin/activate   # Linux/Mac
 venv\Scripts\activate      # Windows
 
 # Instalar dependencias
@@ -156,14 +147,18 @@ ollama pull mistral
 ## Utilizacao
 
 ```bash
-# Executar analise completa
-python sentinel.py
+# Menu interativo (recomendado)
+python src/menu.py
 
-# Treinar o modelo ML
-python train.py
+# Executar analise completa diretamente
+python src/sentinel.py
+
+# Retreinar modelo com dados reais
+python src/extract_training_data.py
+python src/update_training.py
 
 # Correr testes unitarios
-python -m pytest test_sentinel.py -v
+python -m pytest src/test_sentinel.py -v
 ```
 
 Exemplo de output em consola:
@@ -171,19 +166,17 @@ Exemplo de output em consola:
 ```
 [1] A analisar logs de ataque (Motor de Regras)...
     [CRITICAL] Dump de Credenciais (R006) - 18 ocorrencias em 5 hosts
-    [CRITICAL] Reverse Shell Linux (R008) - 29 ocorrencias em 5 hosts
+    [HIGH]     PowerShell Suspeito (R004) - 12 ocorrencias em 3 hosts
 
 [2] A analisar comportamento anomalo (Motor de Anomalias)...
     Anomaly Score: 0.19 | MALICIOSO (99%) [PowerShell EncodedCommand]
 
 [3] A correlacionar eventos (Motor de Correlacao)...
     [CRITICAL] Comprometimento Total de Host Windows (C001) - 5 hosts
-    [CRITICAL] Backdoor Linux Completo (C005) - 5 hosts
     Total de cadeias detetadas: 28
 
 [4] A calcular score de risco por host...
     DESKTOP-ABC123    100/100   CRITICO   7 alertas   5 cadeias
-    db-server          84/100   CRITICO   2 alertas   1 cadeia
 
 [5] A gerar analise global com IA...
     Risk Score Global: 95/100 (CRITICO)
@@ -206,17 +199,17 @@ Detecoes baseadas em padroes conhecidos (9 regras implementadas):
 | R005 | Adicao de Utilizador ao Sistema | CRITICAL |
 | R006 | Dump de Credenciais (mimikatz, lsass) | CRITICAL |
 | R007 | Movimento Lateral via WMI ou PsExec | HIGH |
-| R008 | Reverse Shell Linux (/dev/tcp, nc -e) | CRITICAL |
-| R009 | Leitura de Ficheiros de Credenciais Linux | HIGH |
+| R008 | Reverse Shell (/dev/tcp, nc -e) | CRITICAL |
+| R009 | Leitura de Ficheiros de Credenciais | HIGH |
 
 ### Motor de Anomalias
 
 Detecao de comportamento anomalo sem assinaturas previas:
 
 - **Isolation Forest** — detecao de outliers por comprimento, entropia e numero de argumentos
-- **RandomForest** — classificador treinado com 440 amostras (normal vs malicioso)
+- **RandomForest** — classificador treinado com dados reais (93% accuracy, F1: 0.862)
 - **Entropia de Shannon** — identificacao de comandos ofuscados ou codificados em base64
-- Deduplicacao automatica para evitar analises redundantes
+- **Hard Rules** — 12 regras de alta certeza aplicadas antes do modelo ML
 
 ### Motor de Correlacao
 
@@ -228,7 +221,7 @@ Identificacao de cadeias de ataque multi-evento com base no framework MITRE ATT&
 | C002 | Movimento Lateral Apos Roubo de Credenciais | 90/100 |
 | C003 | Persistencia Apos Execucao LOLBin | 80/100 |
 | C004 | Persistencia Apos Execucao PowerShell | 82/100 |
-| C005 | Backdoor Linux Completo (Reverse Shell + Credential Read) | 95/100 |
+| C005 | Backdoor Completo (Reverse Shell + Credential Read) | 95/100 |
 | C006 | Criacao de Conta e Persistencia | 92/100 |
 
 ---
@@ -261,7 +254,7 @@ Em caso de timeout ou indisponibilidade do Ollama, o sistema usa um **fallback i
 
 ## Relatorios
 
-Cada execucao gera automaticamente dois ficheiros em `output/reports/`:
+Cada execucao gera automaticamente tres ficheiros em `output/reports/`:
 
 **JSON** — estruturado para integracao com outras ferramentas:
 
@@ -278,15 +271,17 @@ Cada execucao gera automaticamente dois ficheiros em `output/reports/`:
 }
 ```
 
-**TXT** — legivel para analistas e orientadores, com sumario executivo, tabela de hosts, alertas ordenados por severidade, cadeias agrupadas por tipo e acoes recomendadas.
+**TXT** — legivel para analistas e orientadores, com sumario executivo, tabela de hosts, alertas ordenados por severidade e acoes recomendadas.
+
+**PDF** — relatorio profissional exportavel diretamente pelo menu interativo.
 
 ---
 
 ## Testes
 
 ```bash
-python -m pytest test_sentinel.py -v
-# 37 passed in 2.83s
+python -m pytest src/test_sentinel.py -v
+# 37 passed in 4.00s
 ```
 
 Cobertura de testes:
@@ -302,13 +297,22 @@ Cobertura de testes:
 
 ## Datasets
 
-Os logs de ataque utilizados para treino e validacao provem do **[OTRF Security Datasets](https://github.com/OTRF/Security-Datasets)** — ficheiros de ataques simulados organizados por tecnica MITRE ATT&CK, convertidos para formato JSONL.
+O modelo ML foi treinado com dados reais extraidos do **[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)** — ficheiros Windows Event Log (.evtx) com ataques reais etiquetados por tecnica MITRE ATT&CK.
 
-Dataset sintetico gerado para desenvolvimento:
+| Fonte | Tipo | Amostras |
+|-------|------|----------|
+| EVTX-ATTACK-SAMPLES | Maliciosos reais (EVTX) | 302 |
+| Dados sinteticos | Normais + Maliciosos base | 117 |
+| **Total** | | **419** |
 
-- 280 eventos de ataque (credential access, execution, lateral movement, persistence)
-- 160 eventos normais (Windows + Linux)
-- 440 eventos no total
+Metricas do modelo (RandomForest, 300 estimadores):
+
+| Metrica | Normal | Malicioso |
+|---------|--------|-----------|
+| Precision | 0.82 | 0.97 |
+| Recall | 0.90 | 0.94 |
+| F1-Score | 0.86 | 0.95 |
+| **Accuracy** | | **93%** |
 
 ---
 
@@ -319,14 +323,16 @@ Dataset sintetico gerado para desenvolvimento:
 | 1 | Parser + Normalizacao de logs | Concluido |
 | 2 | Motor de Regras (9 regras) | Concluido |
 | 3 | Motor de Anomalias (Isolation Forest + ML) | Concluido |
-| 4 | Treino do modelo de classificacao | Concluido |
+| 4 | Treino do modelo com dados sinteticos | Concluido |
 | 5 | Motor de Correlacao (6 cadeias MITRE) | Concluido |
 | 6 | Score de Risco por Host | Concluido |
 | 7 | Integracao Ollama + Fallback inteligente | Concluido |
-| 8 | Relatorios JSON + TXT | Concluido |
+| 8 | Relatorios JSON + TXT + PDF | Concluido |
 | 9 | Testes Unitarios (37 testes) | Concluido |
-| 10 | Validacao com logs reais | Pendente |
-| 11 | Compilacao para executavel (.exe) | Concluido |
+| 10 | Menu interativo com splash screen | Concluido |
+| 11 | Retreino com dados reais (EVTX-ATTACK-SAMPLES) | Concluido |
+| 12 | Compilacao para executavel (.exe) | Concluido |
+| 13 | Validacao com logs de ambiente real | Em progresso |
 
 ---
 
@@ -335,12 +341,15 @@ Dataset sintetico gerado para desenvolvimento:
 | Tecnologia | Uso |
 |-----------|-----|
 | Python 3.10+ | Linguagem principal |
-| scikit-learn | Isolation Forest, RandomForest, TF-IDF |
+| scikit-learn | Isolation Forest, RandomForest |
 | pandas / numpy | Processamento de dados |
 | Ollama + Mistral | IA local para explicabilidade |
+| python-evtx | Parsing de Windows Event Logs |
+| reportlab | Exportacao de relatorios PDF |
+| rich | Interface terminal interativa |
 | pytest | Testes unitarios |
 | MITRE ATT&CK | Framework de referencia |
-| OTRF Security Datasets | Dados de treino |
+| EVTX-ATTACK-SAMPLES | Dados de treino reais |
 
 ---
 
