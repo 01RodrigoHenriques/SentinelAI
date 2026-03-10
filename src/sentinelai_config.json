@@ -1,0 +1,7 @@
+{
+  "logs_folder": "C:\\Users\\ant\\Documents\\Estagio\\SentinelAI\\src\\logs",
+  "output_folder": "C:\\Users\\ant\\Documents\\Estagio\\SentinelAI\\src\\output\\reports",
+  "notifications": true,
+  "discord_webhook": "*REMOVED-DISCORD-WEBHOOK*",
+  "receiver_port": 9000
+}

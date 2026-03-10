@@ -8,6 +8,7 @@ import json
 import glob
 import time
 import threading
+import socket
 
 from rich.console import Console
 from rich.table import Table
@@ -20,7 +21,7 @@ from rich.align import Align
 
 console = Console()
 
-VERSION = "v1.2.0"
+VERSION = "v1.2"
 
 # ============================================================
 # BASE DIR - Funciona tanto como .py como .exe compilado
@@ -31,7 +32,7 @@ if getattr(sys, 'frozen', False):
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-CONFIG_PATH  = os.path.join(BASE_DIR, "sentinelai.config.json")
+CONFIG_PATH  = os.path.join(BASE_DIR, "sentinelai_config.json")
 OUTPUT_DIR   = os.path.join(BASE_DIR, "output", "reports")
 HISTORY_PATH = os.path.join(BASE_DIR, "output", "history.json")
 
@@ -46,6 +47,8 @@ DEFAULT_CONFIG = {
     "logs_folder":   os.path.join(BASE_DIR, "logs"),
     "output_folder": OUTPUT_DIR,
     "notifications": True,
+    "discord_webhook": "",
+    "receiver_port":   9000,
 }
 
 def load_config() -> dict:
@@ -96,20 +99,6 @@ def append_history(report: dict, path: str):
         with open(HISTORY_PATH, "w", encoding="utf-8") as f:
             json.dump(history, f, indent=2, ensure_ascii=False)
 
-# ============================================================
-# NOTIFICACAO WINDOWS
-# ============================================================
-
-def notify_windows(title: str, message: str):
-    if not config.get("notifications", True):
-        return
-    try:
-        from ctypes import windll
-        def _show():
-            windll.user32.MessageBoxW(0, message, title, 0x40)
-        threading.Thread(target=_show, daemon=True).start()
-    except Exception:
-        pass
 
 # ============================================================
 # CORES / UTILITARIOS
@@ -153,6 +142,7 @@ def show_splash():
         "  ╚════██║██╔══╝  ██║╚██╗██║   ██║   ██║██║╚██╗██║██╔══╝  ██║     ██╔══██║██║",
         "  ███████║███████╗██║ ╚████║   ██║   ██║██║ ╚████║███████╗███████╗██║  ██║██║",
         "  ╚══════╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝",
+        "                               Made with love <3                             ",
         "",
     ]
     for line in lines:
@@ -194,6 +184,7 @@ def print_menu():
     table.add_row("[6]", "Historico de analises")
     table.add_row("[7]", "Exportar relatorio em PDF")
     table.add_row("[8]", "Configuracoes")
+    table.add_row("[9]", "Servidor de recepcao de logs (rede)")
     table.add_row("", "")
     table.add_row("[0]", "Sair")
     console.print(Align.center(table))
@@ -208,32 +199,7 @@ def run_analysis():
     console.print(Rule("[bold cyan]Analise Completa[/bold cyan]"))
     console.print()
 
-    # Verificar se ha logs para analisar
-    logs_dir = config.get("logs_folder", os.path.join(BASE_DIR, "logs"))
-    log_files = []
-    for root_dir, dirs, files in os.walk(logs_dir):
-        for f in files:
-            if f.lower().endswith((".evtx", ".log", ".jsonl", ".audit", ".txt")):
-                log_files.append(os.path.join(root_dir, f))
-
-    if not log_files:
-        console.print(Panel(
-            "[bold yellow]Nenhum ficheiro de log encontrado![/bold yellow]\n\n"
-            f"  Pasta configurada:  [cyan]{logs_dir}[/cyan]\n\n"
-            "  Adiciona ficheiros de log nessa pasta para continuar.\n"
-            "  Formatos suportados:  [dim].evtx  .log  .jsonl  .audit  .txt[/dim]\n\n"
-            "  [dim]Podes alterar a pasta de logs em:[/dim]  [cyan]Configuracoes → Pasta de logs[/cyan]",
-            title="[bold red]Sem Logs[/bold red]",
-            border_style="yellow",
-            padding=(1, 2),
-        ))
-        wait_key()
-        return
-
-    console.print(f"  [green]Ficheiros encontrados:[/green] {len(log_files)}")
-    console.print()
-
-    os.environ["SENTINELAI_LOGS_DIR"]   = logs_dir
+    os.environ["SENTINELAI_LOGS_DIR"]   = config.get("logs_folder", "logs")
     os.environ["SENTINELAI_OUTPUT_DIR"] = config.get("output_folder", OUTPUT_DIR)
 
     try:
@@ -253,12 +219,6 @@ def run_analysis():
             append_history(report, reports[-1])
             risk  = report.get("ai_analysis", {}).get("risk_score_global", 0)
             nivel = report.get("ai_analysis", {}).get("nivel_ameaca", "N/A")
-            notify_windows(
-                "SentinelAI - Analise Concluida",
-                f"Risk Score: {risk}/100 ({nivel})\n"
-                f"Alertas: {report.get('total_alerts', 0)} | "
-                f"Cadeias: {report.get('total_chains', 0)}"
-            )
         except Exception:
             pass
 
@@ -651,10 +611,270 @@ def _generate_pdf(report: dict, pdf_path: str):
     doc.build(story)
 
 # ============================================================
-# OPCAO 8 - CONFIGURACOES
+# DISCORD WEBHOOK
 # ============================================================
 
-WINDOWS_LOGS_DIR = r"C:\Windows\System32\winevt\Logs"
+def send_discord_alert(title: str, description: str, color: int = 0xe74c3c):
+    """Envia alerta para o canal Discord via webhook."""
+    webhook_url = config.get("discord_webhook", "")
+    if not webhook_url:
+        return
+    try:
+        import urllib.request
+        payload = json.dumps({
+            "embeds": [{
+                "title":       title,
+                "description": description,
+                "color":       color,
+                "footer":      {"text": f"SentinelAI {VERSION}"},
+                "timestamp":   __import__('datetime').datetime.utcnow().isoformat() + "Z",
+            }]
+        }).encode("utf-8")
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode    = ssl.CERT_NONE
+        req = urllib.request.Request(
+            webhook_url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        urllib.request.urlopen(req, timeout=5, context=ctx)
+    except Exception as e:
+        pass  # webhook erro silencioso
+
+# ============================================================
+# OPCAO 9 - SERVIDOR DE RECEPCAO DE LOGS EM REDE
+# ============================================================
+
+_recv_running = False
+_recv_stats   = {"agents": {}, "total": 0}
+
+def _get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+SEV_EMOJI_RECV = {"CRITICAL": "🔴", "HIGH": "🟠", "MEDIUM": "🟡", "LOW": "🟢"}
+
+def _handle_agent(conn, addr):
+    global _recv_stats
+    ip  = addr[0]
+    buf = ""
+    from datetime import datetime
+    today    = datetime.now().strftime("%Y%m%d")
+    net_dir  = os.path.join(BASE_DIR, "logs", "network")
+    os.makedirs(net_dir, exist_ok=True)
+    log_file = os.path.join(net_dir, f"agent_{ip}_{today}.jsonl")
+    _recv_stats["agents"][ip] = {"ip": ip, "events": 0, "hostname": "?"}
+    console.print(f"\n  [bold green]✅ Agente ligado:[/bold green] [cyan]{ip}[/cyan]")
+    try:
+        with open(log_file, "a", encoding="utf-8") as f:
+            while _recv_running:
+                try:
+                    data = conn.recv(4096)
+                    if not data:
+                        break
+                    buf += data.decode("utf-8", errors="ignore")
+                    while "\n" in buf:
+                        line, buf = buf.split("\n", 1)
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            ev = json.loads(line)
+
+                            # Heartbeat - sinal de vida
+                            if ev.get("type") == "heartbeat":
+                                _recv_stats["agents"][ip]["hostname"] = ev.get("host", "?")
+                                continue
+
+                            hostname  = ev.get("Computer", ip)
+                            rule_name = ev.get("rule_name", "")
+                            severity  = ev.get("severity", "")
+                            cmd       = ev.get("CommandLine", "")
+                            eid       = ev.get("EventID", "?")
+
+                            _recv_stats["agents"][ip]["hostname"] = hostname
+                            _recv_stats["agents"][ip]["events"]  += 1
+                            _recv_stats["total"] += 1
+                            f.write(line + "\n")
+                            f.flush()
+
+                            # Mostrar alerta no terminal se tiver rule_name
+                            if rule_name and severity:
+                                emoji = SEV_EMOJI_RECV.get(severity, "⚪")
+                                color = SEV_COLOR.get(severity, "white")
+                                console.print(f"\n  [{color}]{'─'*50}[/{color}]")
+                                console.print(f"  [bold {color}]{emoji} [{severity}] {rule_name}[/bold {color}]")
+                                console.print(f"  [cyan]Host   :[/cyan] {hostname} ({ip})")
+                                console.print(f"  [cyan]EventID:[/cyan] {eid}")
+                                if cmd:
+                                    display = cmd[:80] + "..." if len(cmd) > 80 else cmd
+                                    console.print(f"  [cyan]Comando:[/cyan] {display}")
+                                console.print(f"  [{color}]{'─'*50}[/{color}]")
+
+                            # Enviar para Discord se configurado
+                            _check_realtime_alert(ev, ip)
+
+                        except Exception:
+                            continue
+                except Exception:
+                    break
+    finally:
+        conn.close()
+        _recv_stats["agents"].pop(ip, None)
+        console.print(f"\n  [bold red]❌ Agente desligado:[/bold red] {ip}")
+
+
+# Event IDs criticos que geram alerta imediato
+_CRITICAL_EVENTS = {
+    4625: "Login falhado",
+    4648: "Login com credenciais explicitas",
+    4672: "Privilegios especiais atribuidos",
+    4697: "Servico instalado",
+    4698: "Tarefa agendada criada",
+    4720: "Conta de utilizador criada",
+    4726: "Conta de utilizador eliminada",
+    7045: "Novo servico instalado no sistema",
+    4103: "PowerShell - Execucao de modulo",
+    4104: "PowerShell - Script executado",
+}
+_alert_cooldown = {}  # ip -> {event_id -> timestamp}
+
+def _check_realtime_alert(ev: dict, ip: str):
+    """Verifica se o evento e critico e envia alerta Discord."""
+    eid      = ev.get("EventId", 0)
+    hostname = ev.get("Computer", ip)
+    channel  = ev.get("Channel", "")
+
+    if eid not in _CRITICAL_EVENTS:
+        return
+
+    # Cooldown de 60s por IP+EventID para nao spammar
+    now = time.time()
+    key = f"{ip}_{eid}"
+    if _alert_cooldown.get(key, 0) + 60 > now:
+        return
+    _alert_cooldown[key] = now
+
+    descricao = _CRITICAL_EVENTS[eid]
+    cmd_line  = ev.get("CommandLine", "")
+    msg = ev.get("Message", "")[:300]
+
+    description = (
+        f"**Host:** `{hostname}` (`{ip}`)"
+        f"**Canal:** `{channel}`"
+        f"**Event ID:** `{eid}` — {descricao}"
+    )
+    if cmd_line:
+        description += f"**CommandLine:** `{cmd_line[:200]}`"
+    if msg:
+        description += f"**Detalhes:**```{msg}```"
+
+    threading.Thread(
+        target=send_discord_alert,
+        args=(f"⚠️ Alerta SentinelAI — {descricao}", description, 0xe74c3c),
+        daemon=True
+    ).start()
+
+def _server_loop(port):
+    global _recv_running
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv.settimeout(1.0)
+    try:
+        srv.bind(("0.0.0.0", port))
+        srv.listen(50)
+        while _recv_running:
+            try:
+                conn, addr = srv.accept()
+                t = threading.Thread(target=_handle_agent, args=(conn, addr), daemon=True)
+                t.start()
+            except socket.timeout:
+                continue
+    except Exception as e:
+        console.print(f"  [red]Erro no servidor: {e}[/red]")
+    finally:
+        srv.close()
+
+def show_receiver():
+    global _recv_running, _recv_stats
+
+    port = config.get("receiver_port", 9000)
+
+    while True:
+        cls()
+        console.print(Rule("[bold cyan]Servidor de Recepcao de Logs[/bold cyan]"))
+        console.print()
+
+        local_ip = _get_local_ip()
+        status   = "[bold green]● ACTIVO[/bold green]" if _recv_running else "[bold red]● INACTIVO[/bold red]"
+        n_agents = len(_recv_stats.get("agents", {}))
+        total    = _recv_stats.get("total", 0)
+
+        console.print(Panel(
+            f"  Estado   : {status}\n"
+            f"  IP       : [cyan]{local_ip}[/cyan]\n"
+            f"  Porta    : [cyan]{port}[/cyan]\n"
+            f"  Agentes  : [cyan]{n_agents}[/cyan] ligados\n"
+            f"  Eventos  : [cyan]{total}[/cyan] recebidos\n\n"
+            f"  [dim]A monitorizar em :[/dim]\n"
+            f"  [yellow]--server {local_ip} --port {port}[/yellow]",
+            title="[bold]Estado do Servidor[/bold]",
+            border_style="blue", padding=(0, 2)
+        ))
+        console.print()
+
+        agents = _recv_stats.get("agents", {})
+        if agents:
+            at = Table(title="Agentes Ligados", box=box.SIMPLE_HEAVY,
+                       header_style="bold cyan", show_header=True)
+            at.add_column("IP",       width=18)
+            at.add_column("Hostname", width=22)
+            at.add_column("Eventos",  width=10, justify="center")
+            for ip, info in agents.items():
+                at.add_row(ip, info.get("hostname", "?"), str(info.get("events", 0)))
+            console.print(at)
+            console.print()
+
+        table = Table(box=box.SIMPLE, show_header=False, padding=(0, 2))
+        table.add_column("Opcao", style="bold cyan", width=6)
+        table.add_column("Descricao", style="white")
+        if _recv_running:
+            table.add_row("[1]", "Parar servidor")
+        else:
+            table.add_row("[1]", "Iniciar servidor")
+        table.add_row("[0]", "Voltar")
+        console.print(Align.center(table))
+        console.print()
+
+        choice = Prompt.ask("  Opcao", default="0")
+
+        if choice == "1":
+            if _recv_running:
+                _recv_running = False
+                console.print("  [yellow]Servidor parado.[/yellow]")
+            else:
+                _recv_running = True
+                _recv_stats   = {"agents": {}, "total": 0}
+                t = threading.Thread(target=_server_loop, args=(port,), daemon=True)
+                t.start()
+                console.print(f"  [green]Servidor iniciado em {local_ip}:{port}[/green]")
+            time.sleep(1.2)
+
+        elif choice == "0":
+            break
+
+# ============================================================
+# OPCAO 8 - CONFIGURACOES
+# ============================================================
 
 def show_settings():
     global config
@@ -663,24 +883,22 @@ def show_settings():
         console.print(Rule("[bold cyan]Configuracoes[/bold cyan]"))
         console.print()
 
-        win_logs_ok = os.path.isdir(WINDOWS_LOGS_DIR)
-        win_logs_status = "[green]Disponivel[/green]" if win_logs_ok else "[red]Executa como Administrador[/red]"
-
         table = Table(box=box.SIMPLE, show_header=False, padding=(0, 2))
         table.add_column("Opcao", style="bold cyan", width=6)
-        table.add_column("Chave", style="dim white", width=28)
+        table.add_column("Chave", style="dim white", width=24)
         table.add_column("Valor atual", style="white")
-        table.add_row("[1]", "Pasta de logs",          config.get("logs_folder", ""))
-        table.add_row("[2]", "Pasta de reports",        config.get("output_folder", ""))
+        table.add_row("[1]", "Pasta de logs",
+                     config.get("logs_folder", ""))
+        table.add_row("[2]", "Pasta de reports",
+                     config.get("output_folder", ""))
         table.add_row("[3]", "Notificacoes Windows",
                      "[green]Activas[/green]" if config.get("notifications") else "[red]Inactivas[/red]")
-        table.add_row("", "", "")
-        table.add_row("[4]", "Usar logs do Windows",   win_logs_status)
+        wh = config.get("discord_webhook", "")
+        wh_status = "[green]Configurado[/green]" if wh else "[red]Nao configurado[/red]"
+        table.add_row("[4]", "Discord Webhook",        wh_status)
         table.add_row("", "", "")
         table.add_row("[0]", "Voltar", "")
         console.print(Align.center(table))
-        console.print()
-        console.print(f"  [dim]Opcao 4 aponta para: {WINDOWS_LOGS_DIR}[/dim]")
         console.print()
 
         choice = Prompt.ask("  Opcao", default="0")
@@ -711,25 +929,19 @@ def show_settings():
             time.sleep(1.2)
 
         elif choice == "4":
-            if not win_logs_ok:
-                console.print()
-                console.print(Panel(
-                    "[yellow]Sem permissao para aceder aos logs do Windows.[/yellow]"
-                    "  Fecha o SentinelAI e volta a abrir como Administrador:"
-                    "  [cyan]Botao direito no .exe → Executar como administrador[/cyan]",
-                    border_style="yellow", padding=(0, 2)
-                ))
+            new_val = Prompt.ask("  Discord Webhook URL", default=config.get("discord_webhook", ""))
+            config["discord_webhook"] = new_val.strip()
+            save_config(config)
+            if new_val.strip():
+                threading.Thread(target=send_discord_alert, args=(
+                    "✅ SentinelAI conectado",
+                    "Webhook configurado! Vais receber alertas de seguranca aqui.",
+                    0x2ecc71
+                ), daemon=True).start()
+                console.print("  [green]Webhook guardado! Mensagem de teste enviada.[/green]")
             else:
-                config["logs_folder"] = WINDOWS_LOGS_DIR
-                save_config(config)
-                console.print()
-                console.print(Panel(
-                    "[green]Pasta de logs atualizada para os logs do Windows![/green]"
-                    f"  [cyan]{WINDOWS_LOGS_DIR}[/cyan]"
-                    "  O SentinelAI vai agora analisar os logs reais deste sistema.",
-                    border_style="green", padding=(0, 2)
-                ))
-            time.sleep(2.5)
+                console.print("  [yellow]Webhook removido.[/yellow]")
+            time.sleep(1.5)
 
         elif choice == "0":
             break
@@ -813,45 +1025,7 @@ def _render_report(report: dict, path: str):
 # MAIN
 # ============================================================
 
-def is_admin() -> bool:
-    try:
-        import ctypes
-        return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    except Exception:
-        return False
-
-def restart_as_admin():
-    import ctypes
-    import subprocess
-    try:
-        script = sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)
-        ctypes.windll.shell32.ShellExecuteW(None, "runas", script, None, None, 1)
-    except Exception:
-        pass
-    sys.exit(0)
-
-def check_admin():
-    if not is_admin():
-        cls()
-        console.print()
-        console.print(Align.center(Panel(
-            "[bold yellow]SentinelAI precisa de permissoes de Administrador[/bold yellow]"
-            "  Para analisar os logs do Windows e necessario"
-            "  executar o programa como Administrador."
-            "  [cyan][1][/cyan]  Reiniciar como Administrador (recomendado)"
-            "  [dim][0][/dim]  Continuar sem permissoes (funcoes limitadas)",
-            title="[bold red]Permissoes Insuficientes[/bold red]",
-            border_style="yellow",
-            width=60,
-            padding=(1, 2),
-        )))
-        console.print()
-        choice = Prompt.ask("  Opcao", default="1")
-        if choice == "1":
-            restart_as_admin()
-
 def main():
-    check_admin()
     show_splash()
     while True:
         print_header()
@@ -866,6 +1040,7 @@ def main():
         elif choice == "6": show_history()
         elif choice == "7": export_pdf()
         elif choice == "8": show_settings()
+        elif choice == "9": show_receiver()
         elif choice == "0":
             cls()
             console.print("  [dim]A sair...[/dim]\n")

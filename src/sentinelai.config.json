@@ -1,5 +1,7 @@
 {
-  "logs_folder": "C:\\Windows\\System32\\winevt\\Logs",
+  "logs_folder": "C:\\Users\\ant\\Documents\\Estagio\\SentinelAI\\src\\logs\\network",
   "output_folder": "C:\\Users\\ant\\Documents\\Estagio\\SentinelAI\\src\\output\\reports",
-  "notifications": true
+  "notifications": false,
+  "discord_webhook": "*REMOVED-DISCORD-WEBHOOK*",
+  "receiver_port": 9000
 }
