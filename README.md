@@ -172,28 +172,4 @@ Train the anomaly model:
 
 The resulting executable is created in `dist/`. That directory is ignored by git and should not be committed.
 
-## What Is Safe To Commit
-
-Safe:
-
-- source code under `src/`
-- sample EVTX dataset under `logs/` except runtime network captures
-- model files under `models/`
-- `requirements.txt`
-- `agent.spec`
-- `sentinelai_config.example.json`
-
-Ignored on purpose:
-
-- `src/sentinelai_config.json`
-- `logs/network/`
-- `src/logs/`
-- `output/`
-- `build/`
-- `dist/`
-- `venv/`
-- `.pytest_cache/`
-- `Photos/`
-- local runtime logs and agent state
-
 Made with love by Rodrigo Henriques
