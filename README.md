@@ -196,10 +196,4 @@ Ignored on purpose:
 - `Photos/`
 - local runtime logs and agent state
 
-## Notes Before Pushing To GitHub
-
-- Review `src/sentinelai_config.json` and keep it local only.
-- Do not commit live Discord webhooks.
-- Do not commit runtime captures from `logs/network/`.
-- Rebuild artefacts locally when needed; do not upload `build/` or `dist/`.
-- If you use your own screenshots or personal files, keep them outside tracked folders.
+Made with love by Rodrigo Henriques
