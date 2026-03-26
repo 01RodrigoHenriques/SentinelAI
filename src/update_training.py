@@ -295,9 +295,9 @@ def main():
     from train import predict
     for cmd, expected in test_cases:
         result = predict(cmd)
-        icon   = "✓" if result["label"] == expected else "✗"
+        status = "OK" if result["label"] == expected else "FAIL"
         color  = "MALICIOSO" if result["label"] == "MALICIOSO" else "NORMAL"
-        print(f"  {icon} [{color}] ({result['confidence']}%) → {cmd[:55]}")
+        print(f"  {status} [{color}] ({result['confidence']}%) -> {cmd[:55]}")
 
     print("\n  [+] Modelo atualizado com sucesso!")
     print(f"  Dataset: {total} amostras ({maliciosos} maliciosas reais+sinteticas, {normais} normais)")

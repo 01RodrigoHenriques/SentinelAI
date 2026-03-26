@@ -1,8 +1,7 @@
-# receiver.py
-# SentinelAI - Servidor de Receção de Logs (TCP)
-# Recebe eventos de todos os agentes em tempo real
+# SentinelAI - Receiver TCP
+# Recebe eventos enviados pelos agentes em tempo real.
 #
-# Uso: python receiver.py  (ou integrar no menu.py opção 9)
+# Uso: python receiver.py
 
 import os
 import sys
@@ -13,36 +12,20 @@ import logging
 from datetime import datetime
 from collections import defaultdict
 
+from app_config import load_app_config
+from event_utils import has_valid_auth_token, normalize_event, strip_auth_token
+from runtime_paths import get_app_root
+
 # ============================================================
 # PATHS
 # ============================================================
 
-if getattr(sys, 'frozen', False):
-    BASE_DIR = os.path.dirname(sys.executable)
-else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = str(get_app_root(__file__))
+LOG_FILE    = os.path.join(BASE_DIR, "logs", "receiver.log")
 
-CONFIG_FILE = os.path.join(BASE_DIR, "sentinelai_config.json")
-LOG_FILE    = os.path.join(BASE_DIR, "receiver.log")
-
-# ============================================================
-# CONFIG
-# ============================================================
-
-DEFAULT_CONFIG = {
-    "receiver_port": 9000,
-    "receiver_host": "0.0.0.0",
-}
 
 def load_config() -> dict:
-    try:
-        with open(CONFIG_FILE, encoding="utf-8") as f:
-            cfg = json.load(f)
-        for k, v in DEFAULT_CONFIG.items():
-            cfg.setdefault(k, v)
-        return cfg
-    except Exception:
-        return DEFAULT_CONFIG.copy()
+    return load_app_config(__file__, create_if_missing=True)
 
 # ============================================================
 # CORES NO TERMINAL
@@ -59,7 +42,6 @@ C = {
 }
 
 SEV_COLOR = {"CRITICAL": "RED", "HIGH": "ORANGE", "MEDIUM": "BLUE", "LOW": "GREEN"}
-SEV_EMOJI = {"CRITICAL": "🔴", "HIGH": "🟠", "MEDIUM": "🟡", "LOW": "🟢"}
 
 def col(text, color):
     return f"{C.get(color, '')}{text}{C['RESET']}"
@@ -85,7 +67,6 @@ def process_event(event: dict, agent_ip: str):
     channel   = event.get("Channel", "")
     cmd       = event.get("CommandLine", "")
     ts        = event.get("TimeCreated", "")[:19]
-    emoji     = SEV_EMOJI.get(severity, "⚪")
     color     = SEV_COLOR.get(severity, "RESET")
 
     with stats_lock:
@@ -98,8 +79,8 @@ def process_event(event: dict, agent_ip: str):
     with buffer_lock:
         alert_buffer.append(event)
 
-    print(f"\n{col('─'*60, color)}")
-    print(f"{col(f'{emoji} [{severity}] {rule_name}', 'BOLD')}")
+    print(f"\n{col('-' * 60, color)}")
+    print(f"{col(f'[{severity}] {rule_name}', 'BOLD')}")
     print(f"  {col('Host   :', 'CYAN')} {host}  {col(f'({agent_ip})', 'RESET')}")
     print(f"  {col('Canal  :', 'CYAN')} {channel}  |  EventID: {eid}")
     if cmd:
@@ -107,7 +88,7 @@ def process_event(event: dict, agent_ip: str):
         print(f"  {col('Comando:', 'CYAN')} {display}")
     if ts:
         print(f"  {col('Hora   :', 'CYAN')} {ts}")
-    print(col('─'*60, color))
+    print(col('-' * 60, color))
 
     logging.info(f"ALERTA | {severity} | {rule_name} | {host} | {cmd[:80]}")
 
@@ -118,17 +99,17 @@ def process_heartbeat(data: dict, agent_ip: str):
         agent_stats[host]["last_seen"] = datetime.now().strftime("%H:%M:%S")
         agent_stats[host]["ip"]        = agent_ip
     logging.info(f"HEARTBEAT | {host} ({agent_ip})")
-    print(f"  {col('💓 Heartbeat:', 'CYAN')} {host} ({agent_ip})")
+    print(f"  {col('Heartbeat:', 'CYAN')} {host} ({agent_ip})")
 
 
 # ============================================================
 # HANDLER DE CLIENTE
 # ============================================================
 
-def handle_client(conn: socket.socket, addr: tuple):
+def handle_client(conn: socket.socket, addr: tuple, expected_token: str):
     agent_ip = addr[0]
     logging.info(f"Agente ligado: {agent_ip}:{addr[1]}")
-    print(f"\n{col('✅ Agente ligado:', 'GREEN')} {col(agent_ip, 'BOLD')}")
+    print(f"\n{col('Agente ligado:', 'GREEN')} {col(agent_ip, 'BOLD')}")
 
     buf = ""
     try:
@@ -147,19 +128,23 @@ def handle_client(conn: socket.socket, addr: tuple):
                 if not line:
                     continue
                 try:
-                    event = json.loads(line)
+                    event = normalize_event(json.loads(line))
+                    if not has_valid_auth_token(event, expected_token):
+                        logging.warning(f"Ligacao rejeitada por token invalido: {agent_ip}")
+                        return
+                    event = strip_auth_token(event)
                     if event.get("type") == "heartbeat":
                         process_heartbeat(event, agent_ip)
                     else:
                         process_event(event, agent_ip)
                 except json.JSONDecodeError as e:
-                    logging.warning(f"JSON inválido de {agent_ip}: {e}")
+                    logging.warning(f"JSON invalido de {agent_ip}: {e}")
     except Exception as e:
         logging.error(f"Erro com agente {agent_ip}: {e}")
     finally:
         conn.close()
         logging.info(f"Agente desligado: {agent_ip}")
-        print(f"\n{col('❌ Agente desligado:', 'RED')} {agent_ip}")
+        print(f"\n{col('Agente desligado:', 'RED')} {agent_ip}")
 
 
 # ============================================================
@@ -173,41 +158,42 @@ def stats_loop():
         with stats_lock:
             if not agent_stats:
                 continue
-            print(f"\n{col('─'*60, 'CYAN')}")
-            print(col('📊 AGENTES ACTIVOS', 'BOLD'))
-            print(f"  {'HOST':<25} {'IP':<16} {'EVENTOS':<10} {'ALERTAS':<10} {'ÚLTIMO'}")
+            print(f"\n{col('-' * 60, 'CYAN')}")
+            print(col('ESTADO DOS AGENTES', 'BOLD'))
+            print(f"  {'HOST':<25} {'IP':<16} {'EVENTOS':<10} {'ALERTAS':<10} {'ULTIMO'}")
             print(f"  {'-'*25} {'-'*15} {'-'*9} {'-'*9} {'-'*8}")
             for host, s in sorted(agent_stats.items()):
                 print(f"  {host:<25} {s['ip'] or 'N/A':<16} "
                       f"{s['events']:<10} {s['alerts']:<10} {s['last_seen'] or 'N/A'}")
-            print(col('─'*60, 'CYAN'))
+            print(col('-' * 60, 'CYAN'))
 
 
 # ============================================================
 # SERVIDOR PRINCIPAL
 # ============================================================
 
-def run_server(host: str, port: int):
+def run_server(host: str, port: int, auth_token: str):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     try:
         server.bind((host, port))
     except OSError as e:
-        logging.error(f"Erro ao ligar em {host}:{port} — {e}")
-        print(f"\n{col(f'ERRO: Não foi possível abrir a porta {port}', 'RED')}")
+        logging.error(f"Erro ao ligar em {host}:{port} - {e}")
+        print(f"\n{col(f'ERRO: Nao foi possivel abrir a porta {port}', 'RED')}")
         sys.exit(1)
 
     server.listen(50)
 
-    print(col("═"*60, "CYAN"))
-    print(col("   SentinelAI — Receiver TCP", "BOLD"))
-    print(col("═"*60, "CYAN"))
-    print(f"  {col('Endereço :', 'CYAN')} {host}:{port}")
+    print(col("=" * 60, "CYAN"))
+    print(col("   SentinelAI - Receiver TCP", "BOLD"))
+    print(col("=" * 60, "CYAN"))
+    print(f"  {col('Endereco :', 'CYAN')} {host}:{port}")
     print(f"  {col('Protocolo:', 'CYAN')} TCP / JSON Lines")
+    print(f"  {col('Auth     :', 'CYAN')} {'Token obrigatorio' if auth_token else 'Sem autenticacao'}")
     print(f"  {col('Log      :', 'CYAN')} {LOG_FILE}")
-    print(col("═"*60, "CYAN"))
-    print(f"\n  {col('À espera de agentes...', 'BOLD')} (Ctrl+C para parar)\n")
+    print(col("=" * 60, "CYAN"))
+    print(f"\n  {col('A espera de agentes...', 'BOLD')} (Ctrl+C para parar)\n")
 
     logging.info(f"Receiver iniciado em {host}:{port}")
     threading.Thread(target=stats_loop, daemon=True).start()
@@ -215,15 +201,16 @@ def run_server(host: str, port: int):
     try:
         while True:
             conn, addr = server.accept()
-            threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
+            threading.Thread(target=handle_client, args=(conn, addr, auth_token), daemon=True).start()
     except KeyboardInterrupt:
         pass
     finally:
         server.close()
-        print(f"\n{col('Receiver parado.', 'BOLD')}")
+        print(f"\n{col('Receiver terminado.', 'BOLD')}")
 
 
 def main():
+    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -235,7 +222,10 @@ def main():
     cfg  = load_config()
     host = cfg.get("receiver_host", "0.0.0.0")
     port = int(cfg.get("receiver_port", 9000))
-    run_server(host, port)
+    auth_token = cfg.get("receiver_auth_token", "").strip()
+    if not auth_token:
+        logging.warning("Receiver iniciado sem token de autenticacao.")
+    run_server(host, port, auth_token)
 
 
 if __name__ == "__main__":

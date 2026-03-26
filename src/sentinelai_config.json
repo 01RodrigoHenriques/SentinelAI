@@ -1,7 +1,10 @@
 {
-  "logs_folder": "C:\\Users\\ant\\Documents\\Estagio\\SentinelAI\\src\\logs",
-  "output_folder": "C:\\Users\\ant\\Documents\\Estagio\\SentinelAI\\src\\output\\reports",
+  "logs_folder": "logs",
+  "output_folder": "output/reports",
   "notifications": true,
-  "discord_webhook": "*REMOVED-DISCORD-WEBHOOK*",
-  "receiver_port": 9000
+  "discord_webhook": "",
+  "receiver_server": "",
+  "receiver_host": "0.0.0.0",
+  "receiver_port": 9000,
+  "receiver_auth_token": ""
 }

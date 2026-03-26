@@ -6,27 +6,26 @@ import requests
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import IsolationForest
-from parser import get_events, get_events_from_folder
-from train import predict, check_hard_rules
+from parser import get_events_from_folder
+from train import predict
 from correlator import run_correlation_engine
 from host_scorer import calculate_host_scores, print_host_scores
 from report_writer import generate_txt_report
+from runtime_paths import get_app_root
 
 # --- Configuracao ---
 OLLAMA_URL      = "http://localhost:11434/api/generate"
 OLLAMA_MODEL    = "mistral"
 
-# BASE DIR - funciona como .py e como .exe compilado
-import sys as _sys
-_BASE_DIR = os.path.dirname(_sys.executable) if getattr(_sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
+APP_ROOT = str(get_app_root(__file__))
 
-MODELS_DIR      = os.path.join(_BASE_DIR, "models")
+MODELS_DIR      = os.path.join(APP_ROOT, "models")
 MODEL_PATH      = os.path.join(MODELS_DIR, "security_model.pkl")
 VECTORIZER_PATH = os.path.join(MODELS_DIR, "vectorizer.pkl")
 
 # Paths configurados pelo menu via variaveis de ambiente
-OUTPUT_DIR = os.environ.get("SENTINELAI_OUTPUT_DIR", os.path.join(_BASE_DIR, "output", "reports"))
-LOGS_DIR   = os.environ.get("SENTINELAI_LOGS_DIR",   os.path.join(_BASE_DIR, "logs"))
+OUTPUT_DIR = os.environ.get("SENTINELAI_OUTPUT_DIR", os.path.join(APP_ROOT, "output", "reports"))
+LOGS_DIR   = os.environ.get("SENTINELAI_LOGS_DIR",   os.path.join(APP_ROOT, "logs"))
 
 # ============================================================
 # OLLAMA - Analise Global no Final (uma unica chamada)
@@ -39,7 +38,7 @@ def get_global_ai_analysis(all_alerts: list, correlations: list) -> dict:
     """
     print("\n  [ SentinelAI ] A consultar IA local (Ollama)...", end=" ", flush=True)
 
-    # Resumo compacto — top 5 alertas mais graves e top 5 cadeias
+    # O resumo compacto mantem apenas os alertas e cadeias mais relevantes.
     severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
     top_alerts = sorted(all_alerts, key=lambda a: severity_order.get(a.get("severity", "LOW"), 99))[:5]
     top_chains = sorted(correlations, key=lambda c: -c.get("risk_score", 0))[:5]
@@ -151,8 +150,6 @@ def _fallback_global(all_alerts: list, correlations: list) -> dict:
         "R005": "T1136 - Create Account",
         "R006": "T1003 - OS Credential Dumping",
         "R007": "T1021 - Remote Services",
-        "R008": "T1059 - Command and Scripting Interpreter",
-        "R009": "T1003 - OS Credential Dumping",
     }
     tecnicas = list(dict.fromkeys(
         mitre_map[a.get("rule","")]
@@ -274,21 +271,20 @@ RULES = [
         "check": lambda e: any(x in e.get("CommandLine", "").lower() for x in ["psexec", "wmic /node"]),
         "severity": "HIGH"
     },
-    {
-        "id": "R008",
-        "name": "Reverse Shell Linux",
-        "event_id": "EXECVE",
-        "check": lambda e: any(x in e.get("CommandLine", "").lower() for x in ["/dev/tcp", "nc -e", "bash -i"]),
-        "severity": "CRITICAL"
-    },
-    {
-        "id": "R009",
-        "name": "Leitura de Ficheiros de Credenciais Linux",
-        "event_id": "EXECVE",
-        "check": lambda e: any(x in e.get("CommandLine", "").lower() for x in ["cat /etc/shadow", "cat /etc/passwd", "id_rsa"]),
-        "severity": "HIGH"
-    },
 ]
+
+
+def _compact_event(event: dict) -> dict:
+    return {
+        "EventID": event.get("EventID"),
+        "Computer": event.get("Computer", "N/A"),
+        "TimeCreated": event.get("TimeCreated"),
+        "CommandLine": event.get("CommandLine", ""),
+        "TargetObject": event.get("TargetObject", ""),
+        "Message": event.get("Message", ""),
+        "_source_file": event.get("_source_file"),
+        "_category": event.get("_category"),
+    }
 
 def run_rule_engine(events: list) -> list:
     print("\n--- Motor de Regras --------------------------------------")
@@ -325,6 +321,7 @@ def run_rule_engine(events: list) -> list:
             "occurrences":  len(rule_events),
             "hosts":        sorted(set(e.get("Computer", "N/A") for e in rule_events)),
             "sample_event": rule_events[0],
+            "events":       [_compact_event(event) for event in rule_events],
         })
 
     return alerts
@@ -342,7 +339,7 @@ def run_anomaly_engine(events: list) -> list:
     print("\n--- Motor de Anomalias -----------------------------------")
     alerts = []
 
-    proc_events = [e for e in events if e.get("EventID") in ('1', 'EXECVE') and e.get("CommandLine")]
+    proc_events = [e for e in events if e.get("EventID") in ("1", "4688") and e.get("CommandLine")]
     if len(proc_events) < 2:
         print("  [*] Eventos insuficientes para analise de anomalias.")
         return alerts
@@ -390,7 +387,17 @@ def run_anomaly_engine(events: list) -> list:
                 "hosts":          [str(row.get("Computer", "N/A"))],
                 "anomaly_score":  round(score, 4),
                 "ml_confidence":  row['ml_conf'],
-                "sample_event":   {"CommandLine": cmd, "Computer": str(row.get("Computer", "N/A"))}
+                "sample_event":   {
+                    "CommandLine": cmd,
+                    "Computer": str(row.get("Computer", "N/A")),
+                    "TimeCreated": row.get("TimeCreated"),
+                },
+                "events": [{
+                    "EventID": row.get("EventID"),
+                    "CommandLine": cmd,
+                    "Computer": str(row.get("Computer", "N/A")),
+                    "TimeCreated": row.get("TimeCreated"),
+                }],
             })
 
     return alerts
@@ -433,17 +440,16 @@ def main():
     print("=" * 60)
 
     all_alerts = []
+    all_events = get_events_from_folder(LOGS_DIR)
 
     # 1. Motor de Regras
     print("\n[1] A analisar logs de ataque (Motor de Regras)...")
-    attack_events = get_events_from_folder(LOGS_DIR)
-    if attack_events:
-        alerts = run_rule_engine(attack_events)
+    if all_events:
+        alerts = run_rule_engine(all_events)
         all_alerts.extend(alerts)
 
     # 2. Motor de Anomalias + ML
     print("\n[2] A analisar comportamento anomalo (Motor de Anomalias)...")
-    all_events = get_events_from_folder(LOGS_DIR)
     if all_events:
         alerts = run_anomaly_engine(all_events)
         all_alerts.extend(alerts)
@@ -459,7 +465,7 @@ def main():
 
     # 5. Analise global com Ollama (uma unica chamada)
     print("\n[5] A gerar analise global com IA...")
-    # Acordar o Ollama antes da chamada principal
+    # A chamada curta reduz a latencia da analise principal quando o modelo esta inativo.
     try:
         requests.post(OLLAMA_URL, json={
             "model": OLLAMA_MODEL, "prompt": "ok", "stream": False,

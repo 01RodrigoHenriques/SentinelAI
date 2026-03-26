@@ -9,6 +9,8 @@ import json
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
+from runtime_paths import get_app_root
+
 try:
     import Evtx.Evtx as evtx
     EVTX_AVAILABLE = True
@@ -21,14 +23,13 @@ except ImportError:
 # CONFIGURACAO
 # ============================================================
 
-if getattr(sys, 'frozen', False):
-    BASE_DIR = os.path.dirname(sys.executable)
-else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = str(get_app_root(__file__))
+SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Pasta com os EVTX (ajusta se necessario)
-EVTX_DIR = r"C:\Users\ant\Documents\Estagio\SentinelAI\EVTX-ATTACK"
-OUTPUT_FILE = os.path.join(BASE_DIR, "training_data_real.json")
+# Pasta com os EVTX. Pode ser ajustada por argumento ou variavel de ambiente.
+DEFAULT_EVTX_DIR = os.path.join(BASE_DIR, "logs")
+EVTX_DIR = os.getenv("SENTINELAI_EVTX_DIR", DEFAULT_EVTX_DIR)
+OUTPUT_FILE = os.path.join(SOURCE_DIR, "training_data_real.json")
 
 XML_NS = "{http://schemas.microsoft.com/win/2004/08/events/event}"
 
@@ -108,6 +109,11 @@ def extract_from_evtx(filepath: str, label: int) -> list:
 # ============================================================
 
 def main():
+    global EVTX_DIR
+
+    if len(sys.argv) > 1:
+        EVTX_DIR = sys.argv[1]
+
     print("=" * 55)
     print("  SentinelAI - Extrator de Dados de Treino")
     print(f"  Pasta: {EVTX_DIR}")
@@ -115,7 +121,7 @@ def main():
 
     if not os.path.exists(EVTX_DIR):
         print(f"\n[ERRO] Pasta nao encontrada: {EVTX_DIR}")
-        print("       Ajusta a variavel EVTX_DIR no script.")
+        print("       Define SENTINELAI_EVTX_DIR ou passa a pasta como argumento.")
         sys.exit(1)
 
     # Encontrar todos os .evtx

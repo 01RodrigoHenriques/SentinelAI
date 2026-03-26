@@ -1,15 +1,14 @@
-# agent.py
-# SentinelAI - Agente EDR v2.0
-# Monitoriza eventos Windows em tempo real
-# Envia alertas para Discord E/OU para o Receiver TCP
+# SentinelAI - Agente EDR
+# Monitoriza eventos Windows em tempo real e encaminha alertas.
 #
-# Compilar:
+# Compilacao:
 #   pyinstaller --onefile --noconsole --icon=logo.ico agent.py
 
 import os
 import sys
 import json
 import time
+import argparse
 import socket
 import threading
 import subprocess
@@ -17,6 +16,10 @@ import xml.etree.ElementTree as ET
 import urllib.request
 import logging
 from datetime import datetime
+
+from app_config import get_config_path, load_app_config
+from event_utils import attach_auth_token
+from runtime_paths import get_app_root
 
 # ============================================================
 # VERSAO E CONSTANTES
@@ -104,47 +107,47 @@ COLORS = {
     "LOW":      0x2ecc71,
 }
 
-SEV_EMOJI = {
-    "CRITICAL": "🔴",
-    "HIGH":     "🟠",
-    "MEDIUM":   "🟡",
-    "LOW":      "🟢",
-}
-
 # ============================================================
-# PATHS  ← CORRIGIDO: nome do ficheiro com underscore
+# PATHS
 # ============================================================
 
-_BASE        = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.path.dirname(os.path.abspath(__file__))
-_CONFIG_FILE = os.path.join(_BASE, "sentinelai_config.json")   # <-- corrigido
+_BASE        = str(get_app_root(__file__))
+_CONFIG_FILE = str(get_config_path(__file__))
 _STATE_FILE  = os.path.join(_BASE, "agent_state.json")
-_LOG_FILE    = os.path.join(_BASE, "agent.log")
+_LOG_FILE    = os.path.join(_BASE, "logs", "agent.log")
 
 # ============================================================
 # CONFIG
 # ============================================================
 
-DEFAULT_CONFIG = {
-    "discord_webhook": "",
-    "receiver_server": "",
-    "receiver_port":   9000,
-}
-
 def load_config() -> dict:
-    if not os.path.exists(_CONFIG_FILE):
-        with open(_CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(DEFAULT_CONFIG, f, indent=2)
-        logging.warning(f"Config criado em {_CONFIG_FILE} — preenche o discord_webhook e/ou receiver_server!")
-        return DEFAULT_CONFIG.copy()
-    try:
-        with open(_CONFIG_FILE, encoding="utf-8") as f:
-            cfg = json.load(f)
-        for k, v in DEFAULT_CONFIG.items():
-            cfg.setdefault(k, v)
-        return cfg
-    except Exception as e:
-        logging.error(f"Erro a ler config: {e}")
-        return DEFAULT_CONFIG.copy()
+    config_exists = os.path.exists(_CONFIG_FILE)
+    cfg = load_app_config(__file__, create_if_missing=True)
+    if not config_exists:
+        logging.warning(
+            f"Configuracao criada em {_CONFIG_FILE}. "
+            "Preencher discord_webhook e/ou receiver_server antes da execucao."
+        )
+    return cfg
+
+
+def build_argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="SentinelAI agent")
+    parser.add_argument("--receiver-server", dest="receiver_server", default=None)
+    parser.add_argument("--receiver-port", dest="receiver_port", type=int, default=None)
+    parser.add_argument("--receiver-token", dest="receiver_auth_token", default=None)
+    parser.add_argument("--discord-webhook", dest="discord_webhook", default=None)
+    parser.add_argument("--self-test", action="store_true", help="Envia um evento sintetico para validar a ligacao.")
+    return parser
+
+
+def apply_cli_overrides(cfg: dict, args) -> dict:
+    updated = dict(cfg)
+    for key in ("receiver_server", "receiver_port", "receiver_auth_token", "discord_webhook"):
+        value = getattr(args, key, None)
+        if value is not None:
+            updated[key] = value
+    return updated
 
 # ============================================================
 # ESTADO E COOLDOWNS
@@ -183,7 +186,6 @@ def send_discord(webhook_url: str, rule_name: str, severity: str, event: dict):
     msg      = event.get("Message", "")[:300]
     channel  = event.get("Channel", "")
     ts       = event.get("TimeCreated", "")[:19]
-    emoji    = SEV_EMOJI.get(severity, "⚪")
 
     description = f"**Host:** `{hostname}`\n**Canal:** `{channel}`\n**Event ID:** `{eid}`\n"
     if cmd:
@@ -194,7 +196,7 @@ def send_discord(webhook_url: str, rule_name: str, severity: str, event: dict):
 
     payload = json.dumps({
         "embeds": [{
-            "title":       f"{emoji} [{severity}] {rule_name}",
+            "title":       f"[{severity}] {rule_name}",
             "description": description,
             "color":       COLORS.get(severity, 0x95a5a6),
             "footer":      {"text": f"SentinelAI Agent {VERSION} | {hostname}"},
@@ -208,7 +210,7 @@ def send_discord(webhook_url: str, rule_name: str, severity: str, event: dict):
             headers={"Content-Type": "application/json"}, method="POST"
         )
         urllib.request.urlopen(req, timeout=5)
-        logging.info(f"Discord OK: {emoji} {severity} - {rule_name} | {hostname}")
+        logging.info(f"Discord enviado: {severity} - {rule_name} | {hostname}")
     except Exception as e:
         logging.error(f"Erro Discord: {e}")
 
@@ -218,44 +220,64 @@ def send_discord(webhook_url: str, rule_name: str, severity: str, event: dict):
 
 class TCPSender:
     """
-    Mantém uma ligação TCP persistente ao receiver.
-    Reconecta automaticamente se cair.
+    Mantem uma ligacao TCP persistente ao receiver.
+    Reconecta automaticamente quando necessario.
     """
-    def __init__(self, server: str, port: int):
+    def __init__(self, server: str, port: int, auth_token: str = ""):
         self.server  = server
         self.port    = port
+        self.auth_token = auth_token
         self.sock    = None
         self.lock    = threading.Lock()
         self.running = True
         self._connect()
 
-        # Thread de heartbeat
+        # A thread de heartbeat mantem o receiver informado sobre o estado do agente.
         t = threading.Thread(target=self._heartbeat_loop, daemon=True)
         t.start()
 
     def _connect(self):
-        while self.running:
-            try:
-                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.sock.settimeout(10)
-                self.sock.connect((self.server, self.port))
-                self.sock.settimeout(None)
-                logging.info(f"Ligado ao receiver {self.server}:{self.port}")
-                return
-            except Exception as e:
-                logging.warning(f"Sem ligação ao receiver ({e}). A tentar em {RECONNECT_WAIT}s...")
-                time.sleep(RECONNECT_WAIT)
+        self._close_socket()
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5)
+            sock.connect((self.server, self.port))
+            sock.settimeout(None)
+            self.sock = sock
+            logging.info(f"Ligado ao receiver {self.server}:{self.port}")
+            return True
+        except Exception as e:
+            logging.warning(f"Sem ligação ao receiver ({e}).")
+            self._close_socket()
+            return False
+
+    def _close_socket(self):
+        if self.sock is None:
+            return
+        try:
+            self.sock.close()
+        except Exception:
+            pass
+        finally:
+            self.sock = None
 
     def send(self, data: dict):
-        line = json.dumps(data, ensure_ascii=False) + "\n"
+        payload = attach_auth_token(data, self.auth_token)
+        line = json.dumps(payload, ensure_ascii=False) + "\n"
         with self.lock:
             for attempt in range(3):
+                if self.sock is None and not self._connect():
+                    if attempt < 2:
+                        time.sleep(RECONNECT_WAIT)
+                    continue
                 try:
                     self.sock.sendall(line.encode("utf-8"))
                     return True
                 except Exception as e:
                     logging.warning(f"Erro a enviar (tentativa {attempt+1}): {e}")
-                    self._connect()
+                    self._close_socket()
+                    if attempt < 2:
+                        time.sleep(RECONNECT_WAIT)
         return False
 
     def _heartbeat_loop(self):
@@ -270,10 +292,7 @@ class TCPSender:
 
     def stop(self):
         self.running = False
-        try:
-            self.sock.close()
-        except Exception:
-            pass
+        self._close_socket()
 
 # ============================================================
 # LEITOR DE EVENTOS
@@ -345,6 +364,52 @@ def read_events(channel: str, last_id: int) -> list:
 
     return events
 
+
+def build_self_test_event(hostname: str) -> dict:
+    return {
+        "type": "event",
+        "RecordId": 0,
+        "EventID": "4688",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Computer": hostname,
+        "TimeCreated": datetime.utcnow().isoformat() + "Z",
+        "CommandLine": "powershell.exe -nop -w hidden -enc UwB0AGEAcgB0AC0AUwBsAGUAZQBwACAAMQA=",
+        "TargetObject": "",
+        "Message": "SentinelAI self-test event",
+        "rule_name": "PowerShell Suspeito",
+        "severity": "CRITICAL",
+    }
+
+
+def run_self_test(cfg: dict) -> int:
+    webhook = cfg.get("discord_webhook", "").strip()
+    server = cfg.get("receiver_server", "").strip()
+    port = int(cfg.get("receiver_port", 9000))
+    auth_token = cfg.get("receiver_auth_token", "").strip()
+    hostname = socket.gethostname()
+    event = build_self_test_event(hostname)
+    delivered = False
+
+    logging.info("A executar self-test do agente.")
+
+    if webhook:
+        send_discord(webhook, event["rule_name"], event["severity"], event)
+        delivered = True
+
+    if server:
+        tcp = TCPSender(server, port, auth_token)
+        try:
+            delivered = tcp.send(event) or delivered
+        finally:
+            tcp.stop()
+
+    if delivered:
+        logging.info("Self-test enviado.")
+        return 0
+
+    logging.error("Self-test falhou: nenhum destino configurado ou indisponivel.")
+    return 1
+
 # ============================================================
 # LOOP PRINCIPAL
 # ============================================================
@@ -353,30 +418,33 @@ def run_agent(cfg: dict):
     webhook = cfg.get("discord_webhook", "").strip()
     server  = cfg.get("receiver_server", "").strip()
     port    = int(cfg.get("receiver_port", 9000))
+    auth_token = cfg.get("receiver_auth_token", "").strip()
 
     hostname = socket.gethostname()
     logging.info(f"SentinelAI Agent {VERSION} | Host: {hostname}")
 
-    # Mostrar modo de operação
+    # O resumo de destinos regista como os alertas serao encaminhados.
     modes = []
     if webhook:
-        modes.append("Discord ✅")
+        modes.append("Discord")
     if server:
-        modes.append(f"TCP → {server}:{port} ✅")
+        modes.append(f"TCP {server}:{port}")
     if not modes:
-        logging.warning("AVISO: Nem Discord nem TCP configurado! Os alertas não serão enviados.")
-        modes.append("Nenhum destino configurado ⚠️")
+        logging.warning("Nenhum destino configurado. Os alertas nao serao enviados.")
+        modes.append("sem destinos configurados")
     logging.info(f"Destinos: {' | '.join(modes)}")
 
-    # Iniciar TCP sender se configurado
+    # O emissor TCP e criado apenas quando existe um destino remoto configurado.
     tcp = None
     if server:
         logging.info(f"A ligar ao receiver {server}:{port}...")
-        tcp = TCPSender(server, port)
+        if not auth_token:
+            logging.warning("Receiver configurado sem token de autenticacao.")
+        tcp = TCPSender(server, port, auth_token)
 
     state = load_state()
 
-    # Inicializar estado com último ID atual (não reenviar histórico)
+    # O estado arranca no ultimo EventRecordID observado para evitar reenvio historico.
     for ch in CHANNELS:
         if ch not in state:
             state[ch] = 0
@@ -397,7 +465,7 @@ def run_agent(cfg: dict):
                 pass
 
     save_state(state)
-    logging.info("Pronto! A monitorizar em tempo real...")
+    logging.info("Monitorizacao em tempo real iniciada.")
 
     while True:
         for channel in CHANNELS:
@@ -421,19 +489,19 @@ def run_agent(cfg: dict):
                         continue
                     set_cooldown(key)
 
-                    # Adicionar metadados ao evento antes de enviar
+                    # O evento recebe metadados de alerta antes do encaminhamento.
                     ev["rule_name"] = rule_name
                     ev["severity"]  = severity
 
-                    # Enviar para Discord
+                    # O webhook e utilizado quando configurado.
                     if webhook:
                         send_discord(webhook, rule_name, severity, ev)
 
-                    # Enviar para TCP receiver
+                    # O receiver TCP recebe o mesmo evento quando ativo.
                     if tcp:
                         tcp.send(ev)
 
-                    break  # uma regra por evento
+                    break  # O evento e limitado a uma regra por ciclo.
 
         save_state(state)
         time.sleep(CHECK_INTERVAL)
@@ -443,6 +511,8 @@ def run_agent(cfg: dict):
 # ============================================================
 
 def main():
+    args = build_argument_parser().parse_args()
+    os.makedirs(os.path.dirname(_LOG_FILE), exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -452,9 +522,11 @@ def main():
         ]
     )
 
-    cfg = load_config()
+    cfg = apply_cli_overrides(load_config(), args)
 
     try:
+        if args.self_test:
+            sys.exit(run_self_test(cfg))
         run_agent(cfg)
     except KeyboardInterrupt:
         logging.info("Agente parado.")

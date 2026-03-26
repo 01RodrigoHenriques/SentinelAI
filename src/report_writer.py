@@ -112,13 +112,18 @@ def generate_txt_report(
             tactic  = first.get("mitre_tactic", "N/A")
             risk_c  = first.get("risk_score", 0)
             hosts_c = [i.get("host") for i in instances]
+            sequence = first.get("steps") or first.get("sequence", [])
+            sequence_str = " -> ".join(
+                f"{step.get('rule_name', '?')} [{step.get('timestamp', 'N/A')[:19] if step.get('timestamp') else 'N/A'}]"
+                for step in sequence
+            )
 
             ln()
             ln(f"  [{sev}] {name} ({chain_id})")
             ln(f"  Tatica      : {tactic}")
             ln(f"  Risk Score  : {risk_c}/100")
             ln(f"  Hosts       : {', '.join(hosts_c)}")
-            ln(f"  Sequencia   : {' -> '.join(s.get('rule_name','?') for s in first.get('sequence', []))}")
+            ln(f"  Sequencia   : {sequence_str or 'N/A'}")
 
     # --------------------------------------------------------
     # TECNICAS MITRE ATT&CK

@@ -2,7 +2,7 @@
 # SentinelAI - Motor de Correlacao de Eventos
 # Deteta cadeias de ataque multi-evento no mesmo host dentro de uma janela temporal
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict
 
 # ============================================================
@@ -52,15 +52,6 @@ ATTACK_CHAINS = [
         "mitre_tactic": "Execution -> Persistence",
     },
     {
-        "id": "C005",
-        "name": "Backdoor Linux Completo",
-        "description": "Reverse shell seguido de leitura de credenciais",
-        "rules": ["R008", "R009"],  # Reverse Shell -> Credential Read
-        "severity": "CRITICAL",
-        "risk_boost": 95,
-        "mitre_tactic": "Execution -> Credential Access",
-    },
-    {
         "id": "C006",
         "name": "Criacao de Conta e Persistencia",
         "description": "Adicao de utilizador seguida de persistencia no registo",
@@ -108,54 +99,118 @@ def build_host_timeline(alerts: list) -> dict:
     for alert in alerts:
         rule_id  = alert.get("rule", "")
         severity = alert.get("severity", "LOW")
+        if not rule_id:
+            continue
 
-        # Cada alerta tem uma lista de hosts e um sample_event
-        # Vamos criar uma entrada por host
-        hosts       = alert.get("hosts", [])
-        sample      = alert.get("sample_event", {})
-        ts_raw      = sample.get("TimeCreated")
-        ts          = parse_timestamp(ts_raw)
+        # Preferir eventos expandidos por host/timestamp quando disponíveis.
+        expanded_events = alert.get("events") or []
+        if expanded_events:
+            for event in expanded_events:
+                host = event.get("Computer") or alert.get("sample_event", {}).get("Computer", "unknown")
+                timeline[host].append({
+                    "alert":      alert,
+                    "rule_id":    rule_id,
+                    "timestamp":  parse_timestamp(event.get("TimeCreated")),
+                    "severity":   severity,
+                    "source_event": event,
+                })
+            continue
+
+        hosts  = alert.get("hosts", [])
+        sample = alert.get("sample_event", {})
+        ts     = parse_timestamp(sample.get("TimeCreated"))
 
         if not hosts:
-            host = sample.get("Computer", "unknown")
-            hosts = [host]
+            hosts = [sample.get("Computer", "unknown")]
 
         for host in hosts:
             timeline[host].append({
-                "alert":     alert,
-                "rule_id":   rule_id,
-                "timestamp": ts,
-                "severity":  severity,
+                "alert":      alert,
+                "rule_id":    rule_id,
+                "timestamp":  ts,
+                "severity":   severity,
+                "source_event": sample,
             })
 
     # Ordenar cada host por timestamp
     for host in timeline:
-        timeline[host].sort(key=lambda x: x["timestamp"] or datetime.min)
+        timeline[host].sort(key=lambda x: (x["timestamp"] is None, x["timestamp"] or datetime.max))
 
     return dict(timeline)
 
+
+def _match_span_minutes(match: list):
+    timestamps = [event["timestamp"] for event in match if event.get("timestamp") is not None]
+    if len(timestamps) != len(match):
+        return None
+    return int((timestamps[-1] - timestamps[0]).total_seconds() / 60)
+
 def check_chain(host_events: list, chain: dict, window_minutes: int) -> list:
     """
-    Verifica se todos os elementos de uma cadeia estao presentes no host.
-    Usa ordenacao temporal se disponivel, caso contrario verifica apenas presenca.
+    Verifica se a cadeia ocorre pela ordem definida.
+    Quando existem timestamps, exige que a sequência caiba na janela temporal.
     """
     required_rules = chain["rules"]
-
-    # Recolher todos os eventos por rule_id
-    events_by_rule = defaultdict(list)
-    for e in host_events:
-        events_by_rule[e["rule_id"]].append(e)
-
-    # Verificar se todas as regras estao presentes
-    if not all(r in events_by_rule for r in required_rules):
+    host_rules = {event["rule_id"] for event in host_events}
+    if not all(rule_id in host_rules for rule_id in required_rules):
         return []
 
-    # Construir a cadeia com o primeiro evento de cada regra
-    chain_match = []
-    for rule_id in required_rules:
-        chain_match.append(events_by_rule[rule_id][0])
+    best_match = None
+    best_span = None
 
-    return [chain_match]
+    for start_index, first_event in enumerate(host_events):
+        if first_event["rule_id"] != required_rules[0]:
+            continue
+
+        match = [first_event]
+        first_ts = first_event.get("timestamp")
+        search_index = start_index + 1
+
+        for next_rule in required_rules[1:]:
+            candidate = None
+            candidate_index = None
+
+            for idx in range(search_index, len(host_events)):
+                event = host_events[idx]
+                if event["rule_id"] != next_rule:
+                    continue
+
+                current_ts = event.get("timestamp")
+                if first_ts is not None and current_ts is not None:
+                    delta_minutes = (current_ts - first_ts).total_seconds() / 60
+                    if delta_minutes < 0:
+                        continue
+                    if delta_minutes > window_minutes:
+                        break
+
+                candidate = event
+                candidate_index = idx
+                break
+
+            if candidate is None:
+                match = []
+                break
+
+            match.append(candidate)
+            search_index = candidate_index + 1
+
+        if not match:
+            continue
+
+        span = _match_span_minutes(match)
+        if span is not None and span > window_minutes:
+            continue
+
+        if best_match is None:
+            best_match = match
+            best_span = span
+            continue
+
+        if span is not None and (best_span is None or span < best_span):
+            best_match = match
+            best_span = span
+
+    return [best_match] if best_match else []
 
 def run_correlation_engine(alerts: list) -> list:
     """
@@ -209,8 +264,9 @@ def run_correlation_engine(alerts: list) -> list:
                             "timestamp": e["timestamp"].isoformat() if e["timestamp"] else None,
                         }
                         for e in match
-                    ]
+                    ],
                 }
+                correlation["sequence"] = list(correlation["steps"])
 
                 print(f"\n  [!!!] [{chain['severity']}] {chain['name']} (Cadeia {chain['id']})")
                 print(f"        Host     : {host}")

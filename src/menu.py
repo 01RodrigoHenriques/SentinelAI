@@ -1,6 +1,5 @@
-# menu.py
-# SentinelAI - Menu Interativo
-# pip install rich reportlab
+# SentinelAI - Menu interativo
+# Dependencias: rich, reportlab
 
 import os
 import sys
@@ -9,7 +8,9 @@ import glob
 import time
 import threading
 import socket
+import subprocess
 
+from app_config import get_config_path, load_app_config, mask_secret, save_app_config
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -19,6 +20,14 @@ from rich import box
 from rich.rule import Rule
 from rich.align import Align
 
+from event_utils import (
+    get_event_id_int,
+    has_valid_auth_token,
+    normalize_event,
+    strip_auth_token,
+)
+from runtime_paths import get_app_root
+
 console = Console()
 
 VERSION = "v1.2"
@@ -27,12 +36,8 @@ VERSION = "v1.2"
 # BASE DIR - Funciona tanto como .py como .exe compilado
 # ============================================================
 
-if getattr(sys, 'frozen', False):
-    BASE_DIR = os.path.dirname(sys.executable)
-else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-CONFIG_PATH  = os.path.join(BASE_DIR, "sentinelai_config.json")
+BASE_DIR = str(get_app_root(__file__))
+CONFIG_PATH  = str(get_config_path(__file__))
 OUTPUT_DIR   = os.path.join(BASE_DIR, "output", "reports")
 HISTORY_PATH = os.path.join(BASE_DIR, "output", "history.json")
 
@@ -43,29 +48,13 @@ os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
 # CONFIG FILE
 # ============================================================
 
-DEFAULT_CONFIG = {
-    "logs_folder":   os.path.join(BASE_DIR, "logs"),
-    "output_folder": OUTPUT_DIR,
-    "notifications": True,
-    "discord_webhook": "",
-    "receiver_port":   9000,
-}
-
 def load_config() -> dict:
-    if os.path.exists(CONFIG_PATH):
-        try:
-            with open(CONFIG_PATH, encoding="utf-8") as f:
-                cfg = json.load(f)
-            for k, v in DEFAULT_CONFIG.items():
-                cfg.setdefault(k, v)
-            return cfg
-        except Exception:
-            pass
-    return DEFAULT_CONFIG.copy()
+    return load_app_config(__file__, create_if_missing=True)
 
 def save_config(cfg: dict):
-    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-        json.dump(cfg, f, indent=2, ensure_ascii=False)
+    save_app_config(__file__, cfg)
+    cfg.clear()
+    cfg.update(load_app_config(__file__, create_if_missing=True))
 
 config = load_config()
 
@@ -136,13 +125,9 @@ def show_splash():
     cls()
     lines = [
         "",
-        "  ███████╗███████╗███╗   ██╗████████╗██╗███╗   ██╗███████╗██╗      █████╗ ██╗",
-        "  ██╔════╝██╔════╝████╗  ██║╚══██╔══╝██║████╗  ██║██╔════╝██║     ██╔══██╗██║",
-        "  ███████╗█████╗  ██╔██╗ ██║   ██║   ██║██╔██╗ ██║█████╗  ██║     ███████║██║",
-        "  ╚════██║██╔══╝  ██║╚██╗██║   ██║   ██║██║╚██╗██║██╔══╝  ██║     ██╔══██║██║",
-        "  ███████║███████╗██║ ╚████║   ██║   ██║██║ ╚████║███████╗███████╗██║  ██║██║",
-        "  ╚══════╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝",
-        "                               Made with love <3                             ",
+        "  ================================================================",
+        "                           SentinelAI                            ",
+        "  ================================================================",
         "",
     ]
     for line in lines:
@@ -351,7 +336,7 @@ def show_risk_chart():
         wait_key()
         return
 
-    data.reverse()  # ordem cronologica
+    data.reverse()  # ordem temporal
 
     BAR_WIDTH = 40
     table = Table(box=box.SIMPLE, show_header=True, header_style="bold cyan", padding=(0, 1))
@@ -598,11 +583,11 @@ def _generate_pdf(report: dict, pdf_path: str):
     if tecnicas:
         story.append(Paragraph("Tecnicas MITRE ATT&CK", h2_style))
         for t in tecnicas:
-            story.append(Paragraph(f"• {t}", body_style))
+            story.append(Paragraph(f"- {t}", body_style))
     if acoes:
         story.append(Paragraph("Acoes Imediatas", h2_style))
         for a in acoes:
-            story.append(Paragraph(f"• {a}", red_style))
+            story.append(Paragraph(f"- {a}", red_style))
 
     story.append(Spacer(1, 0.5*cm))
     story.append(HRFlowable(width="100%", thickness=0.5, color=colors.grey))
@@ -630,19 +615,15 @@ def send_discord_alert(title: str, description: str, color: int = 0xe74c3c):
                 "timestamp":   __import__('datetime').datetime.utcnow().isoformat() + "Z",
             }]
         }).encode("utf-8")
-        import ssl
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode    = ssl.CERT_NONE
         req = urllib.request.Request(
             webhook_url,
             data=payload,
             headers={"Content-Type": "application/json"},
             method="POST"
         )
-        urllib.request.urlopen(req, timeout=5, context=ctx)
-    except Exception as e:
-        pass  # webhook erro silencioso
+        urllib.request.urlopen(req, timeout=5)
+    except Exception:
+        return
 
 # ============================================================
 # OPCAO 9 - SERVIDOR DE RECEPCAO DE LOGS EM REDE
@@ -651,17 +632,62 @@ def send_discord_alert(title: str, description: str, color: int = 0xe74c3c):
 _recv_running = False
 _recv_stats   = {"agents": {}, "total": 0}
 
-def _get_local_ip():
+def _score_local_ip(ip: str):
+    if ip.startswith("192.168.56."):
+        return (0, ip)
+    if ip.startswith("192.168."):
+        return (1, ip)
+    if ip.startswith("10."):
+        return (2, ip)
+    if ip.startswith("172."):
+        return (3, ip)
+    return (4, ip)
+
+
+def _get_local_ip_candidates():
+    candidates = []
+
+    if os.name == "nt":
+        try:
+            result = subprocess.run(
+                ["ipconfig"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                creationflags=0x08000000,
+            )
+            for line in result.stdout.splitlines():
+                if "IPv4" not in line or ":" not in line:
+                    continue
+                ip = line.split(":", 1)[1].strip()
+                if (
+                    ip
+                    and ip != "127.0.0.1"
+                    and not ip.startswith("169.254.")
+                    and ip not in candidates
+                ):
+                    candidates.append(ip)
+        except Exception:
+            pass
+
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
-        return ip
+        if ip and ip not in candidates and ip != "127.0.0.1":
+            candidates.append(ip)
     except Exception:
-        return "127.0.0.1"
+        pass
 
-SEV_EMOJI_RECV = {"CRITICAL": "🔴", "HIGH": "🟠", "MEDIUM": "🟡", "LOW": "🟢"}
+    if not candidates:
+        return ["127.0.0.1"]
+
+    return sorted(candidates, key=_score_local_ip)
+
+
+def _get_local_ip():
+    return _get_local_ip_candidates()[0]
 
 def _handle_agent(conn, addr):
     global _recv_stats
@@ -669,11 +695,12 @@ def _handle_agent(conn, addr):
     buf = ""
     from datetime import datetime
     today    = datetime.now().strftime("%Y%m%d")
-    net_dir  = os.path.join(BASE_DIR, "logs", "network")
+    net_dir  = os.path.join(config.get("logs_folder", os.path.join(BASE_DIR, "logs")), "network")
+    expected_token = config.get("receiver_auth_token", "").strip()
     os.makedirs(net_dir, exist_ok=True)
     log_file = os.path.join(net_dir, f"agent_{ip}_{today}.jsonl")
     _recv_stats["agents"][ip] = {"ip": ip, "events": 0, "hostname": "?"}
-    console.print(f"\n  [bold green]✅ Agente ligado:[/bold green] [cyan]{ip}[/cyan]")
+    console.print(f"\n  [bold green]Agente ligado:[/bold green] [cyan]{ip}[/cyan]")
     try:
         with open(log_file, "a", encoding="utf-8") as f:
             while _recv_running:
@@ -688,9 +715,13 @@ def _handle_agent(conn, addr):
                         if not line:
                             continue
                         try:
-                            ev = json.loads(line)
+                            ev = normalize_event(json.loads(line))
+                            if not has_valid_auth_token(ev, expected_token):
+                                console.print(f"\n  [bold red]Ligacao rejeitada:[/bold red] token invalido de {ip}")
+                                return
+                            ev = strip_auth_token(ev)
 
-                            # Heartbeat - sinal de vida
+                            # O heartbeat atualiza o ultimo host conhecido sem gerar alerta.
                             if ev.get("type") == "heartbeat":
                                 _recv_stats["agents"][ip]["hostname"] = ev.get("host", "?")
                                 continue
@@ -704,23 +735,22 @@ def _handle_agent(conn, addr):
                             _recv_stats["agents"][ip]["hostname"] = hostname
                             _recv_stats["agents"][ip]["events"]  += 1
                             _recv_stats["total"] += 1
-                            f.write(line + "\n")
+                            f.write(json.dumps(ev, ensure_ascii=False) + "\n")
                             f.flush()
 
-                            # Mostrar alerta no terminal se tiver rule_name
+                            # O terminal apresenta apenas eventos que ja trazem classificacao.
                             if rule_name and severity:
-                                emoji = SEV_EMOJI_RECV.get(severity, "⚪")
-                                color = SEV_COLOR.get(severity, "white")
-                                console.print(f"\n  [{color}]{'─'*50}[/{color}]")
-                                console.print(f"  [bold {color}]{emoji} [{severity}] {rule_name}[/bold {color}]")
+                                style = SEV_COLOR.get(severity, "white")
+                                console.print(f"\n  [{style}]{'-' * 50}[/{style}]")
+                                console.print(f"  [{style}][{severity}] {rule_name}[/{style}]")
                                 console.print(f"  [cyan]Host   :[/cyan] {hostname} ({ip})")
                                 console.print(f"  [cyan]EventID:[/cyan] {eid}")
                                 if cmd:
                                     display = cmd[:80] + "..." if len(cmd) > 80 else cmd
                                     console.print(f"  [cyan]Comando:[/cyan] {display}")
-                                console.print(f"  [{color}]{'─'*50}[/{color}]")
+                                console.print(f"  [{style}]{'-' * 50}[/{style}]")
 
-                            # Enviar para Discord se configurado
+                            # O alerta imediato e enviado quando a configuracao o permite.
                             _check_realtime_alert(ev, ip)
 
                         except Exception:
@@ -730,10 +760,10 @@ def _handle_agent(conn, addr):
     finally:
         conn.close()
         _recv_stats["agents"].pop(ip, None)
-        console.print(f"\n  [bold red]❌ Agente desligado:[/bold red] {ip}")
+        console.print(f"\n  [bold red]Agente desligado:[/bold red] {ip}")
 
 
-# Event IDs criticos que geram alerta imediato
+# Event IDs criticos com alerta imediato.
 _CRITICAL_EVENTS = {
     4625: "Login falhado",
     4648: "Login com credenciais explicitas",
@@ -750,14 +780,14 @@ _alert_cooldown = {}  # ip -> {event_id -> timestamp}
 
 def _check_realtime_alert(ev: dict, ip: str):
     """Verifica se o evento e critico e envia alerta Discord."""
-    eid      = ev.get("EventId", 0)
+    eid      = get_event_id_int(ev)
     hostname = ev.get("Computer", ip)
     channel  = ev.get("Channel", "")
 
-    if eid not in _CRITICAL_EVENTS:
+    if eid is None or eid not in _CRITICAL_EVENTS:
         return
 
-    # Cooldown de 60s por IP+EventID para nao spammar
+    # O cooldown reduz repeticao de alertas para a mesma origem.
     now = time.time()
     key = f"{ip}_{eid}"
     if _alert_cooldown.get(key, 0) + 60 > now:
@@ -769,18 +799,18 @@ def _check_realtime_alert(ev: dict, ip: str):
     msg = ev.get("Message", "")[:300]
 
     description = (
-        f"**Host:** `{hostname}` (`{ip}`)"
-        f"**Canal:** `{channel}`"
-        f"**Event ID:** `{eid}` — {descricao}"
+        f"**Host:** `{hostname}` (`{ip}`)\n"
+        f"**Canal:** `{channel}`\n"
+        f"**Event ID:** `{eid}` - {descricao}\n"
     )
     if cmd_line:
-        description += f"**CommandLine:** `{cmd_line[:200]}`"
+        description += f"**CommandLine:** `{cmd_line[:200]}`\n"
     if msg:
-        description += f"**Detalhes:**```{msg}```"
+        description += f"**Detalhes:**\n```{msg}```"
 
     threading.Thread(
         target=send_discord_alert,
-        args=(f"⚠️ Alerta SentinelAI — {descricao}", description, 0xe74c3c),
+        args=(f"Alerta SentinelAI - {descricao}", description, 0xe74c3c),
         daemon=True
     ).start()
 
@@ -789,8 +819,9 @@ def _server_loop(port):
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     srv.settimeout(1.0)
+    bind_host = config.get("receiver_host", "0.0.0.0")
     try:
-        srv.bind(("0.0.0.0", port))
+        srv.bind((bind_host, port))
         srv.listen(50)
         while _recv_running:
             try:
@@ -807,26 +838,34 @@ def _server_loop(port):
 def show_receiver():
     global _recv_running, _recv_stats
 
-    port = config.get("receiver_port", 9000)
-
     while True:
+        port = config.get("receiver_port", 9000)
+        bind_host = config.get("receiver_host", "0.0.0.0")
+        auth_token = config.get("receiver_auth_token", "").strip()
         cls()
         console.print(Rule("[bold cyan]Servidor de Recepcao de Logs[/bold cyan]"))
         console.print()
 
-        local_ip = _get_local_ip()
-        status   = "[bold green]● ACTIVO[/bold green]" if _recv_running else "[bold red]● INACTIVO[/bold red]"
+        local_ips = _get_local_ip_candidates()
+        local_ip = local_ips[0]
+        alt_ips = ", ".join(local_ips[1:3]) if len(local_ips) > 1 else ""
+        status   = "[bold green]ACTIVO[/bold green]" if _recv_running else "[bold red]INACTIVO[/bold red]"
         n_agents = len(_recv_stats.get("agents", {}))
         total    = _recv_stats.get("total", 0)
 
         console.print(Panel(
             f"  Estado   : {status}\n"
-            f"  IP       : [cyan]{local_ip}[/cyan]\n"
+            f"  Bind     : [cyan]{bind_host}[/cyan]\n"
+            f"  IP rec.  : [cyan]{local_ip}[/cyan]\n"
             f"  Porta    : [cyan]{port}[/cyan]\n"
+            f"  Token    : [cyan]{mask_secret(auth_token)}[/cyan]\n"
             f"  Agentes  : [cyan]{n_agents}[/cyan] ligados\n"
             f"  Eventos  : [cyan]{total}[/cyan] recebidos\n\n"
-            f"  [dim]A monitorizar em :[/dim]\n"
-            f"  [yellow]--server {local_ip} --port {port}[/yellow]",
+            f"  [dim]Configuracao recomendada no agente:[/dim]\n"
+            f"  [yellow]receiver_server = {local_ip}[/yellow]\n"
+            f"  [yellow]receiver_port = {port}[/yellow]\n"
+            f"  [yellow]receiver_auth_token = {mask_secret(auth_token)}[/yellow]"
+            + (f"\n\n  [dim]IPs alternativos:[/dim] [cyan]{alt_ips}[/cyan]" if alt_ips else ""),
             title="[bold]Estado do Servidor[/bold]",
             border_style="blue", padding=(0, 2)
         ))
@@ -896,6 +935,9 @@ def show_settings():
         wh = config.get("discord_webhook", "")
         wh_status = "[green]Configurado[/green]" if wh else "[red]Nao configurado[/red]"
         table.add_row("[4]", "Discord Webhook",        wh_status)
+        table.add_row("[5]", "Receiver Host", config.get("receiver_host", "0.0.0.0"))
+        table.add_row("[6]", "Receiver Porta", str(config.get("receiver_port", 9000)))
+        table.add_row("[7]", "Receiver Token", mask_secret(config.get("receiver_auth_token", "")))
         table.add_row("", "", "")
         table.add_row("[0]", "Voltar", "")
         console.print(Align.center(table))
@@ -905,12 +947,10 @@ def show_settings():
 
         if choice == "1":
             new_val = Prompt.ask("  Nova pasta de logs", default=config.get("logs_folder", ""))
-            if os.path.isdir(new_val):
-                config["logs_folder"] = new_val
-                save_config(config)
-                console.print("  [green]Guardado.[/green]")
-            else:
-                console.print("  [red]Pasta nao existe. Crie-a primeiro.[/red]")
+            os.makedirs(new_val, exist_ok=True)
+            config["logs_folder"] = new_val
+            save_config(config)
+            console.print("  [green]Guardado.[/green]")
             time.sleep(1.2)
 
         elif choice == "2":
@@ -934,14 +974,39 @@ def show_settings():
             save_config(config)
             if new_val.strip():
                 threading.Thread(target=send_discord_alert, args=(
-                    "✅ SentinelAI conectado",
-                    "Webhook configurado! Vais receber alertas de seguranca aqui.",
+                    "SentinelAI configurado",
+                    "Webhook configurado. Os alertas de seguranca serao enviados para este canal.",
                     0x2ecc71
                 ), daemon=True).start()
                 console.print("  [green]Webhook guardado! Mensagem de teste enviada.[/green]")
             else:
                 console.print("  [yellow]Webhook removido.[/yellow]")
             time.sleep(1.5)
+
+        elif choice == "5":
+            new_val = Prompt.ask("  Endereco de bind do receiver", default=config.get("receiver_host", "0.0.0.0"))
+            config["receiver_host"] = new_val.strip() or "0.0.0.0"
+            save_config(config)
+            console.print("  [green]Guardado.[/green]")
+            time.sleep(1.2)
+
+        elif choice == "6":
+            new_val = Prompt.ask("  Porta do receiver", default=str(config.get("receiver_port", 9000)))
+            config["receiver_port"] = new_val.strip()
+            save_config(config)
+            config = load_config()
+            console.print(f"  [green]Porta guardada:[/green] {config['receiver_port']}")
+            time.sleep(1.2)
+
+        elif choice == "7":
+            new_val = Prompt.ask("  Token de autenticacao do receiver", default=config.get("receiver_auth_token", ""))
+            config["receiver_auth_token"] = new_val.strip()
+            save_config(config)
+            if new_val.strip():
+                console.print("  [green]Token guardado.[/green]")
+            else:
+                console.print("  [yellow]Token removido. O receiver aceita qualquer origem.[/yellow]")
+            time.sleep(1.2)
 
         elif choice == "0":
             break
@@ -1011,11 +1076,11 @@ def _render_report(report: dict, path: str):
         if tecnicas:
             info += "[bold cyan]Tecnicas MITRE ATT&CK:[/bold cyan]\n"
             for t in tecnicas:
-                info += f"  [yellow]•[/yellow] {t}\n"
+                info += f"  [yellow]-[/yellow] {t}\n"
         if acoes:
             info += "\n[bold cyan]Acoes Imediatas:[/bold cyan]\n"
             for a in acoes:
-                info += f"  [red]•[/red] {a}\n"
+                info += f"  [red]-[/red] {a}\n"
         console.print(Panel(info.strip(), border_style="dim blue", padding=(0, 1)))
         console.print()
 

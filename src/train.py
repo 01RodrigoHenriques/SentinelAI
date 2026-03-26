@@ -1,5 +1,4 @@
-# train.py - Treino do Modelo de Classificação
-# SentinelAI - Motor de Análise Comportamental
+# SentinelAI - Treino do modelo de classificacao
 import os
 import joblib
 import pandas as pd
@@ -8,13 +7,18 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
+from runtime_paths import get_app_root
+
 # --- Configuração ---
-MODELS_DIR = "models"
+APP_ROOT = str(get_app_root(__file__))
+MODELS_DIR = os.path.join(APP_ROOT, "models")
 MODEL_PATH = os.path.join(MODELS_DIR, "security_model.pkl")
 VECTORIZER_PATH = os.path.join(MODELS_DIR, "vectorizer.pkl")
 
+_MODEL_CACHE = {"clf": None, "vectorizer": None}
+
 # --- Dados de treino ---
-# Formato: (command_line, label)  →  1 = Malicioso, 0 = Normal
+# Formato: (command_line, label) -> 1 = Malicioso, 0 = Normal
 TRAINING_DATA = [
     # === MALICIOSOS ===
 
@@ -142,7 +146,7 @@ def load_training_data():
     return commands, labels
 
 def extract_features(commands):
-    """Features manuais para detetar padrões suspeitos."""
+    """Extrai indicadores manuais para padroes suspeitos."""
     import re
     import numpy as np
 
@@ -211,6 +215,8 @@ def save_model(clf, vectorizer):
     os.makedirs(MODELS_DIR, exist_ok=True)
     joblib.dump(clf, MODEL_PATH)
     joblib.dump(vectorizer, VECTORIZER_PATH)
+    _MODEL_CACHE["clf"] = clf
+    _MODEL_CACHE["vectorizer"] = vectorizer
     print(f"[+] Modelo guardado em: {MODEL_PATH}")
     print(f"[+] Vetorizador guardado em: {VECTORIZER_PATH}")
 
@@ -238,11 +244,25 @@ def check_hard_rules(command_line):
             return True, reason
     return False, None
 
+
+def load_model_artifacts():
+    if _MODEL_CACHE["clf"] is not None and _MODEL_CACHE["vectorizer"] is not None:
+        return _MODEL_CACHE["clf"], _MODEL_CACHE["vectorizer"]
+
+    if not os.path.exists(MODEL_PATH) or not os.path.exists(VECTORIZER_PATH):
+        raise FileNotFoundError(
+            f"Modelo não encontrado em {MODELS_DIR}. Executa train.py antes de usar predict()."
+        )
+
+    _MODEL_CACHE["clf"] = joblib.load(MODEL_PATH)
+    _MODEL_CACHE["vectorizer"] = joblib.load(VECTORIZER_PATH)
+    return _MODEL_CACHE["clf"], _MODEL_CACHE["vectorizer"]
+
 def predict(command_line):
-    """Classifica um command line — usa o modelo treinado."""
+    """Classifica uma command line com regras e modelo treinado."""
     from scipy.sparse import hstack, csr_matrix
 
-    # 1. Verificar regras de alta certeza primeiro
+    # As regras deterministicas sao avaliadas antes do modelo estatistico.
     is_malicious, reason = check_hard_rules(command_line)
     if is_malicious:
         return {
@@ -252,9 +272,8 @@ def predict(command_line):
             "reason": reason
         }
 
-    # 2. Modelo ML para os restantes
-    clf        = joblib.load(MODEL_PATH)
-    vectorizer = joblib.load(VECTORIZER_PATH)
+    # O modelo estatistico classifica os restantes comandos.
+    clf, vectorizer = load_model_artifacts()
     X_text     = vectorizer.transform([command_line])
     X_manual   = csr_matrix(extract_features([command_line]))
     X          = hstack([X_text, X_manual])
@@ -276,7 +295,7 @@ def main():
     clf, vectorizer = train_model(commands, labels)
     save_model(clf, vectorizer)
 
-    # Teste rápido
+    # O bloco final executa uma validacao rapida apos o treino.
     print("\n--- Teste Rápido ---")
     test_commands = [
         "powershell -nop -enc JABzAD0ATg==",
@@ -286,8 +305,10 @@ def main():
     ]
     for cmd in test_commands:
         result = predict(cmd)
-        icon = "🔴" if result["label"] == "MALICIOSO" else "🟢"
-        print(f"  {icon} [{result['label']}] ({result['confidence']}%) [{result['reason']}] → {result['command'][:60]}")
+        print(
+            f"  [{result['label']}] ({result['confidence']}%) "
+            f"[{result['reason']}] -> {result['command'][:60]}"
+        )
 
     print("\n[+] Treino concluído com sucesso!")
 

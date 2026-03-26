@@ -1,362 +1,205 @@
 # SentinelAI
 
-> Motor de Analise Comportamental com IA para Logs de Seguranca Windows
+SentinelAI is a Windows-focused security log analysis project with two main flows:
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
-![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow)
-![License](https://img.shields.io/badge/License-MIT-green)
-![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK-red)
-![Tests](https://img.shields.io/badge/Testes-37%20passed-brightgreen)
-![Model](https://img.shields.io/badge/Modelo-93%25%20accuracy-brightgreen)
+- offline analysis of Windows event logs (`.evtx` and `.jsonl`)
+- real-time forwarding from a Windows agent to a TCP receiver with a local console UI
 
-SentinelAI e um sistema de analise comportamental de logs de seguranca focado na detecao de padroes suspeitos atraves de uma abordagem hibrida: **regras deterministicas**, **analise de anomalias com Machine Learning**, **correlacao temporal de eventos** e **IA local** para producao de relatorios tecnicos estruturados.
+The repository is prepared for public upload. Local runtime artefacts, local config, builds, and generated network logs are excluded by `.gitignore`.
 
-O objetivo nao e apenas detetar eventos isolados, mas identificar **cadeias comportamentais** associadas a atividade maliciosa — como movimentos laterais, dump de credenciais, execucao suspeita de codigo ou persistencia no sistema.
+## Current Scope
 
----
+- Windows-only
+- Rule-based detection for suspicious process execution and common attacker tradecraft
+- Correlation of multi-step attack chains
+- Risk scoring by host
+- Text and PDF reporting
+- Real-time receiver mode for agents on the same lab network
+- Optional Discord notifications
 
-## Indice
+## Repository Layout
 
-- [Objetivo](#objetivo)
-- [Arquitetura](#arquitetura)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Instalacao](#instalacao)
-- [Utilizacao](#utilizacao)
-- [Motores de Detecao](#motores-de-detecao)
-- [Score de Risco por Host](#score-de-risco-por-host)
-- [Correlacao de Eventos](#correlacao-de-eventos)
-- [Explicabilidade com IA](#explicabilidade-com-ia)
-- [Relatorios](#relatorios)
-- [Testes](#testes)
-- [Datasets](#datasets)
-- [Roadmap](#roadmap)
-- [Tecnologias](#tecnologias)
-
----
-
-## Objetivo
-
-Desenvolver um sistema capaz de:
-
-- Analisar logs de seguranca em formato Windows (Sysmon/EVTX)
-- Construir um baseline de comportamento normal e identificar desvios
-- Correlacionar sequencias de eventos suspeitos em janelas temporais
-- Calcular um score de risco individual por host (0-100)
-- Gerar relatorios tecnicos com mapeamento MITRE ATT&CK
-- Apoiar equipas SOC na investigacao e triagem de incidentes
-
----
-
-## Arquitetura
-
-```
-Logs (EVTX / JSONL)
-         |
-         v
-+------------------+
-|   parser.py      |  <- Ingestao, parsing e normalizacao
-+--------+---------+
-         |
-         v
-+--------------------------------------------+
-|            Motor de Detecao               |
-|  +------------+  +----------------------+ |
-|  |  Regras    |  |  Anomalias (ML)      | |
-|  | (9 regras) |  |  Isolation Forest +  | |
-|  |            |  |  RandomForest        | |
-|  +------------+  +----------------------+ |
-|         +-------------------+             |
-|         |   Correlacao      |             |
-|         |  (6 cadeias MITRE)|             |
-|         +-------------------+             |
-+--------------------+-----------------------+
-                     |
-                     v
-+--------------------------------------------+
-|         Score de Risco por Host            |
-|         Ranking 0-100 por host             |
-+--------------------+-----------------------+
-                     |
-                     v
-+--------------------------------------------+
-|         Analise Global com IA              |
-|         Ollama + Mistral (local)           |
-|         Fallback inteligente               |
-+--------------------------------------------+
-                     |
-                     v
-+--------------------------------------------+
-|         Relatorios                         |
-|         report_TIMESTAMP.json             |
-|         report_TIMESTAMP.txt              |
-|         report_TIMESTAMP.pdf              |
-+--------------------------------------------+
-```
-
----
-
-## Estrutura do Projeto
-
-```
+```text
 SentinelAI/
-|
 +-- src/
-|   +-- sentinel.py          # Motor principal
-|   +-- parser.py            # Ingestao e parsing de logs
-|   +-- train.py             # Treino do modelo ML (dados sinteticos)
-|   +-- update_training.py   # Retreino com dados reais (EVTX)
-|   +-- extract_training_data.py  # Extrator de CommandLines de EVTX
-|   +-- correlator.py        # Motor de correlacao de eventos
-|   +-- host_scorer.py       # Score de risco por host
-|   +-- report_writer.py     # Gerador de relatorios TXT
-|   +-- menu.py              # Interface interativa (terminal)
-|   +-- test_sentinel.py     # Testes unitarios (pytest)
-|
-+-- models/
-|   +-- security_model.pkl   # Modelo treinado (RandomForest)
-|   +-- vectorizer.pkl       # Vetorizador char n-gram
-|
+|   +-- menu.py
+|   +-- receiver.py
+|   +-- agent.py
+|   +-- sentinel.py
+|   +-- parser.py
+|   +-- correlator.py
+|   +-- report_writer.py
+|   +-- train.py
+|   +-- extract_training_data.py
+|   +-- test_sentinel.py
+|   +-- sentinelai_config.json   # local runtime config, ignored by git
++-- logs/                        # sample Windows EVTX corpus used for analysis
++-- models/                      # trained ML artefacts used by the anomaly layer
++-- output/                      # generated reports, ignored by git
++-- sentinelai_config.example.json
 +-- requirements.txt
-+-- .gitignore
-+-- README.md
++-- agent.spec
 ```
 
----
+## Requirements
 
-## Instalacao
+- Windows
+- Python 3.11+
+- PowerShell
+- Optional: administrator privileges on the monitored VM for richer event telemetry
+- Optional: Ollama for local AI narrative output
 
-```bash
-# Clonar o repositorio
-git clone https://github.com/BolinaTec/SentinelAI.git
-cd SentinelAI
+## Installation
 
-# Criar ambiente virtual
+```powershell
 python -m venv venv
-venv\Scripts\activate      # Windows
-
-# Instalar dependencias
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
-# Instalar Ollama (IA local) - opcional
-# https://ollama.com/download
-ollama pull mistral
 ```
 
----
+## Configuration
 
-## Utilizacao
+The application reads `src/sentinelai_config.json` by default. That file is intentionally ignored by git so local webhooks, paths, and receiver settings do not leak into the repository.
 
-```bash
-# Menu interativo (recomendado)
-python src/menu.py
+Use the example file as the public baseline:
 
-# Executar analise completa diretamente
-python src/sentinel.py
-
-# Retreinar modelo com dados reais
-python src/extract_training_data.py
-python src/update_training.py
-
-# Correr testes unitarios
-python -m pytest src/test_sentinel.py -v
+```powershell
+Copy-Item .\sentinelai_config.example.json .\src\sentinelai_config.json
 ```
 
-Exemplo de output em consola:
+Available keys:
 
-```
-[1] A analisar logs de ataque (Motor de Regras)...
-    [CRITICAL] Dump de Credenciais (R006) - 18 ocorrencias em 5 hosts
-    [HIGH]     PowerShell Suspeito (R004) - 12 ocorrencias em 3 hosts
+- `logs_folder`: directory used for input logs and collected network logs
+- `output_folder`: directory used for generated reports
+- `notifications`: enables local notification behavior in the menu flow
+- `discord_webhook`: optional Discord webhook URL
+- `receiver_server`: receiver address used by the Windows agent
+- `receiver_host`: bind address used by `receiver.py` and the embedded receiver in the menu
+- `receiver_port`: TCP listener port
+- `receiver_auth_token`: optional shared token between agent and receiver
 
-[2] A analisar comportamento anomalo (Motor de Anomalias)...
-    Anomaly Score: 0.19 | MALICIOSO (99%) [PowerShell EncodedCommand]
+Optional environment overrides:
 
-[3] A correlacionar eventos (Motor de Correlacao)...
-    [CRITICAL] Comprometimento Total de Host Windows (C001) - 5 hosts
-    Total de cadeias detetadas: 28
+- `SENTINELAI_CONFIG_PATH`
+- `SENTINELAI_LOGS_DIR`
+- `SENTINELAI_OUTPUT_DIR`
+- `SENTINELAI_DISCORD_WEBHOOK`
+- `SENTINELAI_RECEIVER_SERVER`
+- `SENTINELAI_RECEIVER_HOST`
+- `SENTINELAI_RECEIVER_PORT`
+- `SENTINELAI_RECEIVER_AUTH_TOKEN`
+- `SENTINELAI_NOTIFICATIONS`
+- `SENTINELAI_EVTX_DIR`
 
-[4] A calcular score de risco por host...
-    DESKTOP-ABC123    100/100   CRITICO   7 alertas   5 cadeias
+## Running
 
-[5] A gerar analise global com IA...
-    Risk Score Global: 95/100 (CRITICO)
-```
+Interactive menu:
 
----
-
-## Motores de Detecao
-
-### Motor de Regras
-
-Detecoes baseadas em padroes conhecidos (9 regras implementadas):
-
-| Regra | Descricao | Severidade |
-|-------|-----------|------------|
-| R001 | Persistencia via Chave Run | HIGH |
-| R002 | Criacao de Scheduled Task | HIGH |
-| R003 | LOLBin Detetado (rundll32, certutil, mshta...) | MEDIUM |
-| R004 | PowerShell Suspeito (encoded, bypass, hidden) | HIGH |
-| R005 | Adicao de Utilizador ao Sistema | CRITICAL |
-| R006 | Dump de Credenciais (mimikatz, lsass) | CRITICAL |
-| R007 | Movimento Lateral via WMI ou PsExec | HIGH |
-| R008 | Reverse Shell (/dev/tcp, nc -e) | CRITICAL |
-| R009 | Leitura de Ficheiros de Credenciais | HIGH |
-
-### Motor de Anomalias
-
-Detecao de comportamento anomalo sem assinaturas previas:
-
-- **Isolation Forest** — detecao de outliers por comprimento, entropia e numero de argumentos
-- **RandomForest** — classificador treinado com dados reais (93% accuracy, F1: 0.862)
-- **Entropia de Shannon** — identificacao de comandos ofuscados ou codificados em base64
-- **Hard Rules** — 12 regras de alta certeza aplicadas antes do modelo ML
-
-### Motor de Correlacao
-
-Identificacao de cadeias de ataque multi-evento com base no framework MITRE ATT&CK:
-
-| Cadeia | Descricao | Risk Score |
-|--------|-----------|------------|
-| C001 | Comprometimento Total Windows (PS + Mimikatz + Persistencia) | 95/100 |
-| C002 | Movimento Lateral Apos Roubo de Credenciais | 90/100 |
-| C003 | Persistencia Apos Execucao LOLBin | 80/100 |
-| C004 | Persistencia Apos Execucao PowerShell | 82/100 |
-| C005 | Backdoor Completo (Reverse Shell + Credential Read) | 95/100 |
-| C006 | Criacao de Conta e Persistencia | 92/100 |
-
----
-
-## Score de Risco por Host
-
-Cada host recebe um score individual (0-100) calculado com base em:
-
-- Peso dos alertas por severidade (CRITICAL: 30pts, HIGH: 15pts, MEDIUM: 5pts)
-- Peso das cadeias de ataque detetadas (CRITICAL: 25pts, HIGH: 12pts)
-- Nivel de risco: CRITICO (>=80), ALTO (>=55), MEDIO (>=30), BAIXO (<30)
-
----
-
-## Explicabilidade com IA
-
-Apos toda a analise, e feita uma unica chamada ao modelo **Mistral** via Ollama local que produz:
-
-- Resumo executivo do incidente
-- Hipotese de ataque narrativa
-- Mapeamento MITRE ATT&CK (taticas e tecnicas)
-- Hosts criticos ordenados por risco
-- Acoes imediatas recomendadas
-
-Em caso de timeout ou indisponibilidade do Ollama, o sistema usa um **fallback inteligente** que calcula todos os campos automaticamente a partir dos dados reais.
-
-> Totalmente local — sem APIs externas, sem custos, sem envio de dados.
-
----
-
-## Relatorios
-
-Cada execucao gera automaticamente tres ficheiros em `output/reports/`:
-
-**JSON** — estruturado para integracao com outras ferramentas:
-
-```json
-{
-  "timestamp": "20260305_104650",
-  "total_alerts": 10,
-  "total_chains": 28,
-  "total_hosts": 10,
-  "ai_analysis": { ... },
-  "host_scores": { ... },
-  "alerts": [ ... ],
-  "attack_chains": [ ... ]
-}
+```powershell
+.\venv\Scripts\python.exe .\src\menu.py
 ```
 
-**TXT** — legivel para analistas e orientadores, com sumario executivo, tabela de hosts, alertas ordenados por severidade e acoes recomendadas.
+Standalone receiver:
 
-**PDF** — relatorio profissional exportavel diretamente pelo menu interativo.
-
----
-
-## Testes
-
-```bash
-python -m pytest src/test_sentinel.py -v
-# 37 passed in 4.00s
+```powershell
+.\venv\Scripts\python.exe .\src\receiver.py
 ```
 
-Cobertura de testes:
+Windows agent from source:
 
-| Classe | Testes | Descricao |
-|--------|--------|-----------|
-| TestMotorDeRegras | 23 | Positivo + negativo por cada regra |
-| TestMotorDeCorrelacao | 7 | Cadeia completa, incompleta, ordem diferente |
-| TestHostScorer | 5 | Scoring, limites, multiplos hosts |
-| TestReportWriter | 3 | Criacao de ficheiro, seccoes, dados reais |
+```powershell
+.\venv\Scripts\python.exe .\src\agent.py
+```
 
----
+Windows agent self-test:
 
-## Datasets
+```powershell
+.\venv\Scripts\python.exe .\src\agent.py --receiver-server 192.168.56.1 --receiver-port 9000 --self-test
+```
 
-O modelo ML foi treinado com dados reais extraidos do **[EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)** — ficheiros Windows Event Log (.evtx) com ataques reais etiquetados por tecnica MITRE ATT&CK.
+## Typical Lab Flow
 
-| Fonte | Tipo | Amostras |
-|-------|------|----------|
-| EVTX-ATTACK-SAMPLES | Maliciosos reais (EVTX) | 302 |
-| Dados sinteticos | Normais + Maliciosos base | 117 |
-| **Total** | | **419** |
+1. Start the menu and open receiver mode with option `9`.
+2. Start the receiver listener.
+3. On the monitored Windows VM, run the agent pointing to the host IP.
+4. Generate a test event or run the built-in self-test.
+5. Confirm the event appears in the receiver panel.
+6. Reuse the collected JSONL logs for offline analysis from the menu.
 
-Metricas do modelo (RandomForest, 300 estimadores):
+Example VM command:
 
-| Metrica | Normal | Malicioso |
-|---------|--------|-----------|
-| Precision | 0.82 | 0.97 |
-| Recall | 0.90 | 0.94 |
-| F1-Score | 0.86 | 0.95 |
-| **Accuracy** | | **93%** |
+```powershell
+.\agent.exe --receiver-server 192.168.56.1 --receiver-port 9000
+```
 
----
+## Training and Data Utilities
 
-## Roadmap
+Extract commands from EVTX samples:
 
-| Fase | Descricao | Estado |
-|------|-----------|--------|
-| 1 | Parser + Normalizacao de logs | Concluido |
-| 2 | Motor de Regras (9 regras) | Concluido |
-| 3 | Motor de Anomalias (Isolation Forest + ML) | Concluido |
-| 4 | Treino do modelo com dados sinteticos | Concluido |
-| 5 | Motor de Correlacao (6 cadeias MITRE) | Concluido |
-| 6 | Score de Risco por Host | Concluido |
-| 7 | Integracao Ollama + Fallback inteligente | Concluido |
-| 8 | Relatorios JSON + TXT + PDF | Concluido |
-| 9 | Testes Unitarios (37 testes) | Concluido |
-| 10 | Menu interativo com splash screen | Concluido |
-| 11 | Retreino com dados reais (EVTX-ATTACK-SAMPLES) | Concluido |
-| 12 | Compilacao para executavel (.exe) | Concluido |
-| 13 | Validacao com logs de ambiente real | Em progresso |
+```powershell
+.\venv\Scripts\python.exe .\src\extract_training_data.py
+```
 
----
+Or point the extractor at another EVTX folder:
 
-## Tecnologias
+```powershell
+.\venv\Scripts\python.exe .\src\extract_training_data.py "C:\Path\To\EVTX"
+```
 
-| Tecnologia | Uso |
-|-----------|-----|
-| Python 3.10+ | Linguagem principal |
-| scikit-learn | Isolation Forest, RandomForest |
-| pandas / numpy | Processamento de dados |
-| Ollama + Mistral | IA local para explicabilidade |
-| python-evtx | Parsing de Windows Event Logs |
-| reportlab | Exportacao de relatorios PDF |
-| rich | Interface terminal interativa |
-| pytest | Testes unitarios |
-| MITRE ATT&CK | Framework de referencia |
-| EVTX-ATTACK-SAMPLES | Dados de treino reais |
+Refresh the training dataset:
 
----
+```powershell
+.\venv\Scripts\python.exe .\src\update_training.py
+```
 
-## Licenca
+Train the anomaly model:
 
-MIT License — ver [LICENSE](LICENSE) para detalhes.
+```powershell
+.\venv\Scripts\python.exe .\src\train.py
+```
 
----
+## Tests
 
-*Projeto academico desenvolvido no ambito de estagio curricular.*
+```powershell
+.\venv\Scripts\python.exe -m pytest -q .\src\test_sentinel.py
+```
+
+## Building the Agent
+
+```powershell
+.\venv\Scripts\python.exe -m PyInstaller agent.spec --noconfirm
+```
+
+The resulting executable is created in `dist/`. That directory is ignored by git and should not be committed.
+
+## What Is Safe To Commit
+
+Safe:
+
+- source code under `src/`
+- sample EVTX dataset under `logs/` except runtime network captures
+- model files under `models/`
+- `requirements.txt`
+- `agent.spec`
+- `sentinelai_config.example.json`
+
+Ignored on purpose:
+
+- `src/sentinelai_config.json`
+- `logs/network/`
+- `src/logs/`
+- `output/`
+- `build/`
+- `dist/`
+- `venv/`
+- `.pytest_cache/`
+- `Photos/`
+- local runtime logs and agent state
+
+## Notes Before Pushing To GitHub
+
+- Review `src/sentinelai_config.json` and keep it local only.
+- Do not commit live Discord webhooks.
+- Do not commit runtime captures from `logs/network/`.
+- Rebuild artefacts locally when needed; do not upload `build/` or `dist/`.
+- If you use your own screenshots or personal files, keep them outside tracked folders.

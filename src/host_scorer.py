@@ -22,6 +22,16 @@ CHAIN_WEIGHTS = {
     "LOW":       2,
 }
 
+RULE_TECHNIQUES = {
+    "R001": "T1547 - Boot or Logon Autostart Execution",
+    "R002": "T1053 - Scheduled Task/Job",
+    "R003": "T1218 - System Binary Proxy Execution",
+    "R004": "T1059 - Command and Scripting Interpreter",
+    "R005": "T1136 - Create Account",
+    "R006": "T1003 - OS Credential Dumping",
+    "R007": "T1021 - Remote Services",
+}
+
 # ============================================================
 # CALCULO DE SCORE POR HOST
 # ============================================================
@@ -47,15 +57,16 @@ def calculate_host_scores(all_alerts: list, correlations: list) -> dict:
         hosts    = alert.get("hosts", [])
 
         for host in hosts:
+            rule_id = alert.get("rule", "")
             host_data[host]["alerts"].append({
-                "rule":     alert.get("rule", ""),
+                "rule":     rule_id,
                 "name":     alert.get("rule_name", "Anomalia"),
                 "severity": severity,
             })
             host_data[host]["raw_score"] += weight
 
             # Registar tecnica MITRE se disponivel
-            tech = alert.get("ai_analysis", {}).get("technique")
+            tech = alert.get("ai_analysis", {}).get("technique") or RULE_TECHNIQUES.get(rule_id)
             if tech:
                 host_data[host]["tecnicas"].add(tech)
 
@@ -73,6 +84,8 @@ def calculate_host_scores(all_alerts: list, correlations: list) -> dict:
             "tactic":     chain.get("mitre_tactic"),
         })
         host_data[host]["raw_score"] += weight
+        if chain.get("mitre_tactic"):
+            host_data[host]["tecnicas"].add(chain["mitre_tactic"])
 
     # Normalizar scores para 0-100 e calcular nivel de risco
     results = {}

