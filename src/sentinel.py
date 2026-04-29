@@ -12,20 +12,22 @@ from correlator import run_correlation_engine
 from host_scorer import calculate_host_scores, print_host_scores
 from report_writer import generate_txt_report
 from runtime_paths import get_app_root
+from app_config import load_app_config
 
 # --- Configuracao ---
 OLLAMA_URL      = "http://localhost:11434/api/generate"
 OLLAMA_MODEL    = "mistral"
 
 APP_ROOT = str(get_app_root(__file__))
+APP_CONFIG = load_app_config(__file__)
 
-MODELS_DIR      = os.path.join(APP_ROOT, "models")
+MODELS_DIR      = APP_CONFIG["models_folder"]
 MODEL_PATH      = os.path.join(MODELS_DIR, "security_model.pkl")
 VECTORIZER_PATH = os.path.join(MODELS_DIR, "vectorizer.pkl")
 
 # Paths configurados pelo menu via variaveis de ambiente
-OUTPUT_DIR = os.environ.get("SENTINELAI_OUTPUT_DIR", os.path.join(APP_ROOT, "output", "reports"))
-LOGS_DIR   = os.environ.get("SENTINELAI_LOGS_DIR",   os.path.join(APP_ROOT, "logs"))
+OUTPUT_DIR = APP_CONFIG["output_folder"]
+LOGS_DIR   = APP_CONFIG["logs_folder"]
 
 # ============================================================
 # OLLAMA - Analise Global no Final (uma unica chamada)

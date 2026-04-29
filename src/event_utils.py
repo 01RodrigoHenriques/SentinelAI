@@ -1,7 +1,20 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
+import json
+import time
+import uuid
 
-AUTH_TOKEN_KEYS = ("AuthToken", "auth_token")
+AUTH_TOKEN_KEYS = (
+    "AuthToken",
+    "auth_token",
+    "AuthSignature",
+    "AuthTimestamp",
+    "AuthNonce",
+    "AuthTokenId",
+)
+AUTH_WINDOW_SECONDS = 300
 
 
 def normalize_event(event: dict) -> dict:
@@ -32,21 +45,68 @@ def get_event_id_int(event: dict):
         return None
 
 
+def _canonical_payload(event: dict) -> bytes:
+    payload = {
+        key: value
+        for key, value in event.items()
+        if key not in AUTH_TOKEN_KEYS
+    }
+    return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _signature_base(event: dict, timestamp: str, nonce: str) -> bytes:
+    return b"\n".join([
+        timestamp.encode("utf-8"),
+        nonce.encode("utf-8"),
+        _canonical_payload(event),
+    ])
+
+
 def attach_auth_token(event: dict, auth_token: str) -> dict:
     payload = dict(event)
-    if auth_token:
-        payload["AuthToken"] = auth_token
+    if not auth_token:
+        raise ValueError("receiver_auth_token e obrigatorio para assinar eventos")
+
+    timestamp = str(int(time.time()))
+    nonce = uuid.uuid4().hex
+    signature = hmac.new(
+        auth_token.encode("utf-8"),
+        _signature_base(payload, timestamp, nonce),
+        hashlib.sha256,
+    ).hexdigest()
+
+    payload["AuthTimestamp"] = timestamp
+    payload["AuthNonce"] = nonce
+    payload["AuthSignature"] = signature
+    payload["AuthTokenId"] = hashlib.sha256(auth_token.encode("utf-8")).hexdigest()[:10]
     return payload
 
 
 def has_valid_auth_token(event: dict, expected_token: str) -> bool:
     if not expected_token:
-        return True
+        return False
 
-    for key in AUTH_TOKEN_KEYS:
-        if event.get(key) == expected_token:
-            return True
-    return False
+    signature = str(event.get("AuthSignature", ""))
+    timestamp = str(event.get("AuthTimestamp", ""))
+    nonce = str(event.get("AuthNonce", ""))
+    if not signature or not timestamp or not nonce:
+        return False
+
+    try:
+        event_time = int(timestamp)
+    except (TypeError, ValueError):
+        return False
+
+    if abs(int(time.time()) - event_time) > AUTH_WINDOW_SECONDS:
+        return False
+
+    expected_signature = hmac.new(
+        expected_token.encode("utf-8"),
+        _signature_base(event, timestamp, nonce),
+        hashlib.sha256,
+    ).hexdigest()
+
+    return hmac.compare_digest(signature, expected_signature)
 
 
 def strip_auth_token(event: dict) -> dict:

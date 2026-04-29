@@ -10,14 +10,17 @@ Thumbs.db
 build/
 dist/
 output/
+logs/
+models/
+Photos/
 src/logs/
 src/output/
 logs/network/
-Photos/
 
 agent_state.json
 src/agent_state.json
 
+sentinelai_config.json
 src/sentinelai_config.json
 sentinelai_config.local.json
 *.tmp

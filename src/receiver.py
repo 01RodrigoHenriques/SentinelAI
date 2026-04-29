@@ -7,12 +7,15 @@ import os
 import sys
 import json
 import socket
+import ssl
 import threading
 import logging
+import time
 from datetime import datetime
-from collections import defaultdict
+from collections import defaultdict, deque
 
 from app_config import load_app_config
+from app_config import secret_fingerprint
 from event_utils import has_valid_auth_token, normalize_event, strip_auth_token
 from runtime_paths import get_app_root
 
@@ -22,6 +25,14 @@ from runtime_paths import get_app_root
 
 BASE_DIR = str(get_app_root(__file__))
 LOG_FILE    = os.path.join(BASE_DIR, "logs", "receiver.log")
+
+MAX_CLIENTS = 64
+MAX_LINE_BYTES = 64 * 1024
+MAX_BUFFER_BYTES = 128 * 1024
+MAX_ALERT_BUFFER = 5000
+CLIENT_TIMEOUT_SECONDS = 30
+RATE_WINDOW_SECONDS = 10
+RATE_LIMIT_EVENTS = 200
 
 
 def load_config() -> dict:
@@ -52,8 +63,13 @@ def col(text, color):
 
 agent_stats = defaultdict(lambda: {"events": 0, "alerts": 0, "last_seen": None, "ip": None})
 stats_lock  = threading.Lock()
-alert_buffer = []
+alert_buffer = deque(maxlen=MAX_ALERT_BUFFER)
 buffer_lock  = threading.Lock()
+client_slots = threading.BoundedSemaphore(MAX_CLIENTS)
+rate_lock = threading.Lock()
+rate_counters = defaultdict(deque)
+nonce_lock = threading.Lock()
+seen_nonces = defaultdict(deque)
 
 # ============================================================
 # PROCESSAMENTO
@@ -102,6 +118,33 @@ def process_heartbeat(data: dict, agent_ip: str):
     print(f"  {col('Heartbeat:', 'CYAN')} {host} ({agent_ip})")
 
 
+def allow_event_from_ip(agent_ip: str) -> bool:
+    now = time.time()
+    with rate_lock:
+        events = rate_counters[agent_ip]
+        while events and now - events[0] > RATE_WINDOW_SECONDS:
+            events.popleft()
+        if len(events) >= RATE_LIMIT_EVENTS:
+            return False
+        events.append(now)
+        return True
+
+
+def accept_nonce(agent_ip: str, nonce: str) -> bool:
+    if not nonce:
+        return False
+
+    now = time.time()
+    with nonce_lock:
+        nonces = seen_nonces[agent_ip]
+        while nonces and now - nonces[0][1] > 300:
+            nonces.popleft()
+        if any(item[0] == nonce for item in nonces):
+            return False
+        nonces.append((nonce, now))
+        return True
+
+
 # ============================================================
 # HANDLER DE CLIENTE
 # ============================================================
@@ -112,27 +155,50 @@ def handle_client(conn: socket.socket, addr: tuple, expected_token: str):
     print(f"\n{col('Agente ligado:', 'GREEN')} {col(agent_ip, 'BOLD')}")
 
     buf = ""
+    buf_bytes = 0
     try:
-        conn.settimeout(120)
+        conn.settimeout(CLIENT_TIMEOUT_SECONDS)
         while True:
             try:
-                data = conn.recv(4096).decode("utf-8", errors="ignore")
+                chunk = conn.recv(4096)
             except (socket.timeout, ConnectionResetError):
                 break
-            if not data:
+            if not chunk:
                 break
+            buf_bytes += len(chunk)
+            if buf_bytes > MAX_BUFFER_BYTES:
+                logging.warning(f"Buffer excedido por {agent_ip}; ligacao terminada.")
+                break
+            data = chunk.decode("utf-8", errors="ignore")
             buf += data
             while "\n" in buf:
                 line, buf = buf.split("\n", 1)
+                buf_bytes = len(buf.encode("utf-8", errors="ignore"))
                 line = line.strip()
                 if not line:
                     continue
+                if len(line.encode("utf-8")) > MAX_LINE_BYTES:
+                    logging.warning(f"Linha demasiado grande de {agent_ip}; descartada.")
+                    continue
+                if not allow_event_from_ip(agent_ip):
+                    logging.warning(f"Rate limit excedido por {agent_ip}; ligacao terminada.")
+                    return
                 try:
-                    event = normalize_event(json.loads(line))
-                    if not has_valid_auth_token(event, expected_token):
-                        logging.warning(f"Ligacao rejeitada por token invalido: {agent_ip}")
+                    event = json.loads(line)
+                    if not event.get("AuthSignature"):
+                        logging.warning(f"Ligacao rejeitada por assinatura HMAC ausente: {agent_ip}")
                         return
-                    event = strip_auth_token(event)
+                    if not has_valid_auth_token(event, expected_token):
+                        logging.warning(
+                            f"Ligacao rejeitada por token invalido: {agent_ip} "
+                            f"(token_id_esperado={secret_fingerprint(expected_token)} "
+                            f"token_id_recebido={event.get('AuthTokenId', 'N/A')})"
+                        )
+                        return
+                    if not accept_nonce(agent_ip, str(event.get("AuthNonce", ""))):
+                        logging.warning(f"Replay rejeitado para {agent_ip}")
+                        return
+                    event = normalize_event(strip_auth_token(event))
                     if event.get("type") == "heartbeat":
                         process_heartbeat(event, agent_ip)
                     else:
@@ -145,6 +211,7 @@ def handle_client(conn: socket.socket, addr: tuple, expected_token: str):
         conn.close()
         logging.info(f"Agente desligado: {agent_ip}")
         print(f"\n{col('Agente desligado:', 'RED')} {agent_ip}")
+        client_slots.release()
 
 
 # ============================================================
@@ -172,7 +239,31 @@ def stats_loop():
 # SERVIDOR PRINCIPAL
 # ============================================================
 
-def run_server(host: str, port: int, auth_token: str):
+def build_tls_context(cfg: dict):
+    if not cfg.get("receiver_tls_enabled"):
+        return None
+
+    certfile = cfg.get("receiver_tls_certfile", "")
+    keyfile = cfg.get("receiver_tls_keyfile", "")
+    if not certfile or not keyfile:
+        raise RuntimeError("TLS ativo requer receiver_tls_certfile e receiver_tls_keyfile.")
+
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(certfile=certfile, keyfile=keyfile)
+
+    ca_file = cfg.get("receiver_tls_ca_file", "")
+    if ca_file:
+        context.load_verify_locations(cafile=ca_file)
+        context.verify_mode = ssl.CERT_REQUIRED
+    return context
+
+
+def run_server(host: str, port: int, auth_token: str, cfg: dict | None = None):
+    if not auth_token:
+        raise RuntimeError("receiver_auth_token e obrigatorio. O modo sem autenticacao foi removido.")
+
+    cfg = cfg or {}
+    tls_context = build_tls_context(cfg)
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
@@ -189,8 +280,8 @@ def run_server(host: str, port: int, auth_token: str):
     print(col("   SentinelAI - Receiver TCP", "BOLD"))
     print(col("=" * 60, "CYAN"))
     print(f"  {col('Endereco :', 'CYAN')} {host}:{port}")
-    print(f"  {col('Protocolo:', 'CYAN')} TCP / JSON Lines")
-    print(f"  {col('Auth     :', 'CYAN')} {'Token obrigatorio' if auth_token else 'Sem autenticacao'}")
+    print(f"  {col('Protocolo:', 'CYAN')} {'TLS' if tls_context else 'TCP'} / JSON Lines")
+    print(f"  {col('Auth     :', 'CYAN')} HMAC obrigatorio")
     print(f"  {col('Log      :', 'CYAN')} {LOG_FILE}")
     print(col("=" * 60, "CYAN"))
     print(f"\n  {col('A espera de agentes...', 'BOLD')} (Ctrl+C para parar)\n")
@@ -201,6 +292,18 @@ def run_server(host: str, port: int, auth_token: str):
     try:
         while True:
             conn, addr = server.accept()
+            if not client_slots.acquire(blocking=False):
+                logging.warning(f"Limite de clientes excedido; rejeitado {addr[0]}:{addr[1]}")
+                conn.close()
+                continue
+            if tls_context:
+                try:
+                    conn = tls_context.wrap_socket(conn, server_side=True)
+                except ssl.SSLError as e:
+                    logging.warning(f"Handshake TLS falhou para {addr[0]}:{addr[1]} - {e}")
+                    conn.close()
+                    client_slots.release()
+                    continue
             threading.Thread(target=handle_client, args=(conn, addr, auth_token), daemon=True).start()
     except KeyboardInterrupt:
         pass
@@ -224,8 +327,8 @@ def main():
     port = int(cfg.get("receiver_port", 9000))
     auth_token = cfg.get("receiver_auth_token", "").strip()
     if not auth_token:
-        logging.warning("Receiver iniciado sem token de autenticacao.")
-    run_server(host, port, auth_token)
+        raise RuntimeError("receiver_auth_token e obrigatorio. Defina-o na configuracao.")
+    run_server(host, port, auth_token, cfg)
 
 
 if __name__ == "__main__":

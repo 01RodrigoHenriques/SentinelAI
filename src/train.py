@@ -8,10 +8,12 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
 from runtime_paths import get_app_root
+from app_config import load_app_config
 
 # --- Configuração ---
 APP_ROOT = str(get_app_root(__file__))
-MODELS_DIR = os.path.join(APP_ROOT, "models")
+APP_CONFIG = load_app_config(__file__)
+MODELS_DIR = APP_CONFIG["models_folder"]
 MODEL_PATH = os.path.join(MODELS_DIR, "security_model.pkl")
 VECTORIZER_PATH = os.path.join(MODELS_DIR, "vectorizer.pkl")
 

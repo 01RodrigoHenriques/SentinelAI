@@ -13,6 +13,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import classification_report
 
+from app_config import load_app_config
+
 # ============================================================
 # PATHS
 # ============================================================
@@ -22,8 +24,10 @@ if getattr(sys, 'frozen', False):
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+APP_CONFIG = load_app_config(__file__)
+
 REAL_DATA_FILE  = os.path.join(BASE_DIR, "training_data_real.json")
-MODELS_DIR      = os.path.join(BASE_DIR, "models")
+MODELS_DIR      = APP_CONFIG["models_folder"]
 MODEL_PATH      = os.path.join(MODELS_DIR, "security_model.pkl")
 VECTORIZER_PATH = os.path.join(MODELS_DIR, "vectorizer.pkl")
 

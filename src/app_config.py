@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -14,15 +15,24 @@ def _default_paths(file_path: str) -> tuple[Path, Path]:
 
 def build_default_config(file_path: str) -> dict:
     logs_dir, output_dir = _default_paths(file_path)
+    models_dir = get_app_root(file_path) / "models"
     return {
         "logs_folder": str(logs_dir),
         "output_folder": str(output_dir),
+        "models_folder": str(models_dir),
         "notifications": True,
         "discord_webhook": "",
         "receiver_server": "",
         "receiver_host": "0.0.0.0",
         "receiver_port": 9000,
         "receiver_auth_token": "",
+        "receiver_tls_enabled": False,
+        "receiver_tls_certfile": "",
+        "receiver_tls_keyfile": "",
+        "receiver_tls_ca_file": "",
+        "receiver_tls_server_name": "",
+        "receiver_tls_client_certfile": "",
+        "receiver_tls_client_keyfile": "",
     }
 
 
@@ -72,16 +82,31 @@ def mask_secret(value: str, prefix: int = 6, suffix: int = 4) -> str:
     return f"{raw_value[:prefix]}...{raw_value[-suffix:]}"
 
 
+def secret_fingerprint(value: str) -> str:
+    raw_value = str(value or "").strip()
+    if not raw_value:
+        return "N/A"
+    return hashlib.sha256(raw_value.encode("utf-8")).hexdigest()[:10]
+
+
 def _apply_env_overrides(config: dict) -> dict:
     overridden = dict(config)
     env_map = {
         "logs_folder": "SENTINELAI_LOGS_DIR",
         "output_folder": "SENTINELAI_OUTPUT_DIR",
+        "models_folder": "SENTINELAI_MODELS_DIR",
         "discord_webhook": "SENTINELAI_DISCORD_WEBHOOK",
         "receiver_server": "SENTINELAI_RECEIVER_SERVER",
         "receiver_host": "SENTINELAI_RECEIVER_HOST",
         "receiver_port": "SENTINELAI_RECEIVER_PORT",
         "receiver_auth_token": "SENTINELAI_RECEIVER_AUTH_TOKEN",
+        "receiver_tls_enabled": "SENTINELAI_RECEIVER_TLS_ENABLED",
+        "receiver_tls_certfile": "SENTINELAI_RECEIVER_TLS_CERTFILE",
+        "receiver_tls_keyfile": "SENTINELAI_RECEIVER_TLS_KEYFILE",
+        "receiver_tls_ca_file": "SENTINELAI_RECEIVER_TLS_CA_FILE",
+        "receiver_tls_server_name": "SENTINELAI_RECEIVER_TLS_SERVER_NAME",
+        "receiver_tls_client_certfile": "SENTINELAI_RECEIVER_TLS_CLIENT_CERTFILE",
+        "receiver_tls_client_keyfile": "SENTINELAI_RECEIVER_TLS_CLIENT_KEYFILE",
         "notifications": "SENTINELAI_NOTIFICATIONS",
     }
 
@@ -110,6 +135,11 @@ def normalize_config(config: dict, file_path: str) -> dict:
         Path(defaults["output_folder"]),
         app_root,
     )
+    merged["models_folder"] = _normalize_path(
+        merged.get("models_folder"),
+        Path(defaults["models_folder"]),
+        app_root,
+    )
     merged["notifications"] = _parse_bool(
         merged.get("notifications"),
         defaults["notifications"],
@@ -122,12 +152,27 @@ def normalize_config(config: dict, file_path: str) -> dict:
         defaults["receiver_port"],
     )
     merged["receiver_auth_token"] = str(merged.get("receiver_auth_token", "")).strip()
+    merged["receiver_tls_enabled"] = _parse_bool(
+        merged.get("receiver_tls_enabled"),
+        defaults["receiver_tls_enabled"],
+    )
+    for key in (
+        "receiver_tls_certfile",
+        "receiver_tls_keyfile",
+        "receiver_tls_ca_file",
+        "receiver_tls_client_certfile",
+        "receiver_tls_client_keyfile",
+    ):
+        raw_path = str(merged.get(key, "")).strip()
+        merged[key] = _normalize_path(raw_path, Path(raw_path), app_root) if raw_path else ""
+    merged["receiver_tls_server_name"] = str(merged.get("receiver_tls_server_name", "")).strip()
     return merged
 
 
 def ensure_runtime_dirs(config: dict):
     os.makedirs(config["logs_folder"], exist_ok=True)
     os.makedirs(config["output_folder"], exist_ok=True)
+    os.makedirs(config["models_folder"], exist_ok=True)
 
 
 def load_app_config(file_path: str, create_if_missing: bool = False) -> dict:

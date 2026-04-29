@@ -9,8 +9,9 @@ import time
 import threading
 import socket
 import subprocess
+from collections import defaultdict, deque
 
-from app_config import get_config_path, load_app_config, mask_secret, save_app_config
+from app_config import get_config_path, load_app_config, mask_secret, save_app_config, secret_fingerprint
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -631,14 +632,23 @@ def send_discord_alert(title: str, description: str, color: int = 0xe74c3c):
 
 _recv_running = False
 _recv_stats   = {"agents": {}, "total": 0}
+_recv_stats_lock = threading.Lock()
+_recv_client_slots = threading.BoundedSemaphore(64)
+_recv_rate = defaultdict(deque)
+_recv_nonces = defaultdict(deque)
+_RECV_MAX_BUFFER_BYTES = 128 * 1024
+_RECV_MAX_LINE_BYTES = 64 * 1024
+_RECV_RATE_WINDOW_SECONDS = 10
+_RECV_RATE_LIMIT_EVENTS = 200
+_RECV_NONCE_WINDOW_SECONDS = 300
 
 def _score_local_ip(ip: str):
-    if ip.startswith("192.168.56."):
-        return (0, ip)
     if ip.startswith("192.168."):
-        return (1, ip)
+        if ip.startswith("192.168.56."):
+            return (2, ip)
+        return (0, ip)
     if ip.startswith("10."):
-        return (2, ip)
+        return (1, ip)
     if ip.startswith("172."):
         return (3, ip)
     return (4, ip)
@@ -693,37 +703,66 @@ def _handle_agent(conn, addr):
     global _recv_stats
     ip  = addr[0]
     buf = ""
+    buf_bytes = 0
     from datetime import datetime
     today    = datetime.now().strftime("%Y%m%d")
     net_dir  = os.path.join(config.get("logs_folder", os.path.join(BASE_DIR, "logs")), "network")
     expected_token = config.get("receiver_auth_token", "").strip()
     os.makedirs(net_dir, exist_ok=True)
     log_file = os.path.join(net_dir, f"agent_{ip}_{today}.jsonl")
-    _recv_stats["agents"][ip] = {"ip": ip, "events": 0, "hostname": "?"}
+    with _recv_stats_lock:
+        agent_info = _recv_stats["agents"].setdefault(
+            ip,
+            {"ip": ip, "events": 0, "hostname": "?", "connections": 0},
+        )
+        agent_info["connections"] += 1
     console.print(f"\n  [bold green]Agente ligado:[/bold green] [cyan]{ip}[/cyan]")
     try:
+        conn.settimeout(30)
         with open(log_file, "a", encoding="utf-8") as f:
             while _recv_running:
                 try:
                     data = conn.recv(4096)
                     if not data:
                         break
+                    buf_bytes += len(data)
+                    if buf_bytes > _RECV_MAX_BUFFER_BYTES:
+                        console.print(f"\n  [bold red]Ligacao terminada:[/bold red] buffer excedido de {ip}")
+                        break
                     buf += data.decode("utf-8", errors="ignore")
                     while "\n" in buf:
                         line, buf = buf.split("\n", 1)
+                        buf_bytes = len(buf.encode("utf-8", errors="ignore"))
                         line = line.strip()
                         if not line:
                             continue
+                        if len(line.encode("utf-8")) > _RECV_MAX_LINE_BYTES:
+                            console.print(f"\n  [yellow]Evento descartado:[/yellow] linha demasiado grande de {ip}")
+                            continue
+                        if not _allow_receiver_event(ip):
+                            console.print(f"\n  [bold red]Ligacao terminada:[/bold red] rate limit excedido de {ip}")
+                            return
                         try:
-                            ev = normalize_event(json.loads(line))
+                            ev = json.loads(line)
+                            if not ev.get("AuthSignature"):
+                                console.print(f"\n  [bold red]Ligacao rejeitada:[/bold red] assinatura HMAC ausente de {ip}")
+                                console.print("  [yellow]Confirme que a VM usa o agent.exe novo e a config ao lado do executavel.[/yellow]")
+                                return
                             if not has_valid_auth_token(ev, expected_token):
                                 console.print(f"\n  [bold red]Ligacao rejeitada:[/bold red] token invalido de {ip}")
+                                console.print(f"  [yellow]Token ID esperado:[/yellow] {secret_fingerprint(expected_token)}")
+                                console.print(f"  [yellow]Token ID recebido:[/yellow] {ev.get('AuthTokenId', 'N/A')}")
                                 return
-                            ev = strip_auth_token(ev)
+                            if not _accept_receiver_nonce(ip, str(ev.get("AuthNonce", ""))):
+                                console.print(f"\n  [bold red]Ligacao rejeitada:[/bold red] replay detetado de {ip}")
+                                return
+                            ev = normalize_event(strip_auth_token(ev))
 
                             # O heartbeat atualiza o ultimo host conhecido sem gerar alerta.
                             if ev.get("type") == "heartbeat":
-                                _recv_stats["agents"][ip]["hostname"] = ev.get("host", "?")
+                                with _recv_stats_lock:
+                                    if ip in _recv_stats["agents"]:
+                                        _recv_stats["agents"][ip]["hostname"] = ev.get("host", "?")
                                 continue
 
                             hostname  = ev.get("Computer", ip)
@@ -732,9 +771,11 @@ def _handle_agent(conn, addr):
                             cmd       = ev.get("CommandLine", "")
                             eid       = ev.get("EventID", "?")
 
-                            _recv_stats["agents"][ip]["hostname"] = hostname
-                            _recv_stats["agents"][ip]["events"]  += 1
-                            _recv_stats["total"] += 1
+                            with _recv_stats_lock:
+                                if ip in _recv_stats["agents"]:
+                                    _recv_stats["agents"][ip]["hostname"] = hostname
+                                    _recv_stats["agents"][ip]["events"]  += 1
+                                _recv_stats["total"] += 1
                             f.write(json.dumps(ev, ensure_ascii=False) + "\n")
                             f.flush()
 
@@ -753,13 +794,23 @@ def _handle_agent(conn, addr):
                             # O alerta imediato e enviado quando a configuracao o permite.
                             _check_realtime_alert(ev, ip)
 
-                        except Exception:
+                        except json.JSONDecodeError:
+                            console.print(f"\n  [yellow]Evento descartado:[/yellow] JSON invalido de {ip}")
+                            continue
+                        except Exception as e:
+                            console.print(f"\n  [yellow]Evento descartado:[/yellow] erro ao processar evento de {ip}: {e}")
                             continue
                 except Exception:
                     break
     finally:
         conn.close()
-        _recv_stats["agents"].pop(ip, None)
+        _recv_client_slots.release()
+        with _recv_stats_lock:
+            agent_info = _recv_stats["agents"].get(ip)
+            if agent_info:
+                agent_info["connections"] = max(0, agent_info.get("connections", 1) - 1)
+                if agent_info["connections"] == 0:
+                    _recv_stats["agents"].pop(ip, None)
         console.print(f"\n  [bold red]Agente desligado:[/bold red] {ip}")
 
 
@@ -777,6 +828,29 @@ _CRITICAL_EVENTS = {
     4104: "PowerShell - Script executado",
 }
 _alert_cooldown = {}  # ip -> {event_id -> timestamp}
+
+def _allow_receiver_event(ip: str) -> bool:
+    now = time.time()
+    events = _recv_rate[ip]
+    while events and now - events[0] > _RECV_RATE_WINDOW_SECONDS:
+        events.popleft()
+    if len(events) >= _RECV_RATE_LIMIT_EVENTS:
+        return False
+    events.append(now)
+    return True
+
+
+def _accept_receiver_nonce(ip: str, nonce: str) -> bool:
+    if not nonce:
+        return False
+    now = time.time()
+    entries = _recv_nonces[ip]
+    while entries and now - entries[0][1] > _RECV_NONCE_WINDOW_SECONDS:
+        entries.popleft()
+    if any(seen_nonce == nonce for seen_nonce, _ in entries):
+        return False
+    entries.append((nonce, now))
+    return True
 
 def _check_realtime_alert(ev: dict, ip: str):
     """Verifica se o evento e critico e envia alerta Discord."""
@@ -826,6 +900,9 @@ def _server_loop(port):
         while _recv_running:
             try:
                 conn, addr = srv.accept()
+                if not _recv_client_slots.acquire(blocking=False):
+                    conn.close()
+                    continue
                 t = threading.Thread(target=_handle_agent, args=(conn, addr), daemon=True)
                 t.start()
             except socket.timeout:
@@ -850,28 +927,34 @@ def show_receiver():
         local_ip = local_ips[0]
         alt_ips = ", ".join(local_ips[1:3]) if len(local_ips) > 1 else ""
         status   = "[bold green]ACTIVO[/bold green]" if _recv_running else "[bold red]INACTIVO[/bold red]"
-        n_agents = len(_recv_stats.get("agents", {}))
-        total    = _recv_stats.get("total", 0)
+        with _recv_stats_lock:
+            agents_snapshot = dict(_recv_stats.get("agents", {}))
+            n_agents = len(agents_snapshot)
+            total = _recv_stats.get("total", 0)
 
         console.print(Panel(
             f"  Estado   : {status}\n"
+            f"  Config   : [cyan]{CONFIG_PATH}[/cyan]\n"
             f"  Bind     : [cyan]{bind_host}[/cyan]\n"
             f"  IP rec.  : [cyan]{local_ip}[/cyan]\n"
             f"  Porta    : [cyan]{port}[/cyan]\n"
             f"  Token    : [cyan]{mask_secret(auth_token)}[/cyan]\n"
+            f"  Token ID : [cyan]{secret_fingerprint(auth_token)}[/cyan]\n"
             f"  Agentes  : [cyan]{n_agents}[/cyan] ligados\n"
             f"  Eventos  : [cyan]{total}[/cyan] recebidos\n\n"
             f"  [dim]Configuracao recomendada no agente:[/dim]\n"
             f"  [yellow]receiver_server = {local_ip}[/yellow]\n"
             f"  [yellow]receiver_port = {port}[/yellow]\n"
-            f"  [yellow]receiver_auth_token = {mask_secret(auth_token)}[/yellow]"
+            f"  [yellow]receiver_auth_token = {mask_secret(auth_token)}[/yellow]\n"
+            f"  [yellow]receiver_token_id = {secret_fingerprint(auth_token)}[/yellow]\n"
+            f"  [dim]Auth HMAC obrigatoria[/dim]"
             + (f"\n\n  [dim]IPs alternativos:[/dim] [cyan]{alt_ips}[/cyan]" if alt_ips else ""),
             title="[bold]Estado do Servidor[/bold]",
             border_style="blue", padding=(0, 2)
         ))
         console.print()
 
-        agents = _recv_stats.get("agents", {})
+        agents = agents_snapshot
         if agents:
             at = Table(title="Agentes Ligados", box=box.SIMPLE_HEAVY,
                        header_style="bold cyan", show_header=True)
@@ -901,8 +984,15 @@ def show_receiver():
                 _recv_running = False
                 console.print("  [yellow]Servidor parado.[/yellow]")
             else:
+                if not auth_token:
+                    console.print("  [bold red]Defina Receiver Token antes de iniciar o servidor.[/bold red]")
+                    time.sleep(1.5)
+                    continue
                 _recv_running = True
-                _recv_stats   = {"agents": {}, "total": 0}
+                with _recv_stats_lock:
+                    _recv_stats = {"agents": {}, "total": 0}
+                _recv_rate.clear()
+                _recv_nonces.clear()
                 t = threading.Thread(target=_server_loop, args=(port,), daemon=True)
                 t.start()
                 console.print(f"  [green]Servidor iniciado em {local_ip}:{port}[/green]")
@@ -1005,7 +1095,7 @@ def show_settings():
             if new_val.strip():
                 console.print("  [green]Token guardado.[/green]")
             else:
-                console.print("  [yellow]Token removido. O receiver aceita qualquer origem.[/yellow]")
+                console.print("  [yellow]Token removido. O receiver nao inicia sem autenticacao.[/yellow]")
             time.sleep(1.2)
 
         elif choice == "0":

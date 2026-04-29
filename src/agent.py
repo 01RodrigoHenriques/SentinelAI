@@ -10,6 +10,7 @@ import json
 import time
 import argparse
 import socket
+import ssl
 import threading
 import subprocess
 import xml.etree.ElementTree as ET
@@ -17,7 +18,7 @@ import urllib.request
 import logging
 from datetime import datetime
 
-from app_config import get_config_path, load_app_config
+from app_config import get_config_path, load_app_config, secret_fingerprint
 from event_utils import attach_auth_token
 from runtime_paths import get_app_root
 
@@ -123,6 +124,8 @@ _LOG_FILE    = os.path.join(_BASE, "logs", "agent.log")
 def load_config() -> dict:
     config_exists = os.path.exists(_CONFIG_FILE)
     cfg = load_app_config(__file__, create_if_missing=True)
+    logging.info(f"Config usada: {_CONFIG_FILE}")
+    logging.info(f"Receiver token ID: {secret_fingerprint(cfg.get('receiver_auth_token', ''))}")
     if not config_exists:
         logging.warning(
             f"Configuracao criada em {_CONFIG_FILE}. "
@@ -223,10 +226,13 @@ class TCPSender:
     Mantem uma ligacao TCP persistente ao receiver.
     Reconecta automaticamente quando necessario.
     """
-    def __init__(self, server: str, port: int, auth_token: str = ""):
+    def __init__(self, server: str, port: int, auth_token: str = "", tls_config: dict | None = None):
+        if not auth_token:
+            raise ValueError("receiver_auth_token e obrigatorio para enviar eventos ao receiver")
         self.server  = server
         self.port    = port
         self.auth_token = auth_token
+        self.tls_config = tls_config or {}
         self.sock    = None
         self.lock    = threading.Lock()
         self.running = True
@@ -242,6 +248,16 @@ class TCPSender:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(5)
             sock.connect((self.server, self.port))
+            if self.tls_config.get("enabled"):
+                context = ssl.create_default_context(
+                    cafile=self.tls_config.get("ca_file") or None
+                )
+                certfile = self.tls_config.get("client_certfile")
+                keyfile = self.tls_config.get("client_keyfile")
+                if certfile and keyfile:
+                    context.load_cert_chain(certfile=certfile, keyfile=keyfile)
+                server_name = self.tls_config.get("server_name") or self.server
+                sock = context.wrap_socket(sock, server_hostname=server_name)
             sock.settimeout(None)
             self.sock = sock
             logging.info(f"Ligado ao receiver {self.server}:{self.port}")
@@ -397,7 +413,7 @@ def run_self_test(cfg: dict) -> int:
         delivered = True
 
     if server:
-        tcp = TCPSender(server, port, auth_token)
+        tcp = TCPSender(server, port, auth_token, build_tls_config(cfg))
         try:
             delivered = tcp.send(event) or delivered
         finally:
@@ -439,8 +455,8 @@ def run_agent(cfg: dict):
     if server:
         logging.info(f"A ligar ao receiver {server}:{port}...")
         if not auth_token:
-            logging.warning("Receiver configurado sem token de autenticacao.")
-        tcp = TCPSender(server, port, auth_token)
+            raise RuntimeError("receiver_auth_token e obrigatorio quando receiver_server esta configurado.")
+        tcp = TCPSender(server, port, auth_token, build_tls_config(cfg))
 
     state = load_state()
 
@@ -505,6 +521,16 @@ def run_agent(cfg: dict):
 
         save_state(state)
         time.sleep(CHECK_INTERVAL)
+
+
+def build_tls_config(cfg: dict) -> dict:
+    return {
+        "enabled": bool(cfg.get("receiver_tls_enabled")),
+        "ca_file": cfg.get("receiver_tls_ca_file", ""),
+        "server_name": cfg.get("receiver_tls_server_name", ""),
+        "client_certfile": cfg.get("receiver_tls_client_certfile", ""),
+        "client_keyfile": cfg.get("receiver_tls_client_keyfile", ""),
+    }
 
 # ============================================================
 # ENTRY POINT

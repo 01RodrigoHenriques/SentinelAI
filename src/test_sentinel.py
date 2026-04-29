@@ -255,7 +255,7 @@ class TestHostScorer:
 from report_writer import generate_txt_report
 from parser import get_events, parse_jsonl
 from app_config import load_app_config
-from event_utils import attach_auth_token, has_valid_auth_token, strip_auth_token
+from event_utils import attach_auth_token, has_valid_auth_token, normalize_event, strip_auth_token
 
 class TestReportWriter:
 
@@ -351,17 +351,31 @@ class TestTransportAuth:
 
     def test_attach_auth_token_adiciona_campo(self):
         payload = attach_auth_token({"type": "heartbeat"}, "segredo")
-        assert payload["AuthToken"] == "segredo"
+        assert "AuthSignature" in payload
+        assert "AuthTimestamp" in payload
+        assert "AuthNonce" in payload
 
     def test_has_valid_auth_token_valida_token_certo(self):
-        payload = {"AuthToken": "segredo"}
+        payload = attach_auth_token({"type": "heartbeat"}, "segredo")
         assert has_valid_auth_token(payload, "segredo") is True
         assert has_valid_auth_token(payload, "errado") is False
 
+    def test_has_valid_auth_token_rejeita_sem_token_esperado(self):
+        payload = attach_auth_token({"type": "heartbeat"}, "segredo")
+        assert has_valid_auth_token(payload, "") is False
+
     def test_strip_auth_token_remove_campo(self):
-        payload = strip_auth_token({"AuthToken": "segredo", "EventID": "4688"})
-        assert "AuthToken" not in payload
+        signed = attach_auth_token({"EventID": "4688"}, "segredo")
+        payload = strip_auth_token(signed)
+        assert "AuthSignature" not in payload
+        assert "AuthTimestamp" not in payload
+        assert "AuthNonce" not in payload
         assert payload["EventID"] == "4688"
+
+    def test_validacao_deve_acontecer_antes_de_normalizar(self):
+        signed = attach_auth_token({"EventID": "4688", "RecordId": 0}, "segredo")
+        assert has_valid_auth_token(signed, "segredo") is True
+        assert has_valid_auth_token(normalize_event(signed), "segredo") is False
 
 
 class TestAppConfig:

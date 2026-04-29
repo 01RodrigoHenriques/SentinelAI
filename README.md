@@ -3,7 +3,7 @@
 SentinelAI is a Windows-focused security log analysis project with two main flows:
 
 - offline analysis of Windows event logs (`.evtx` and `.jsonl`)
-- real-time forwarding from a Windows agent to a TCP receiver with a local console UI
+- real-time forwarding from a Windows agent to a receiver with HMAC-authenticated JSONL events and a local console UI
 
 The repository is prepared for public upload. Local runtime artefacts, local config, builds, and generated network logs are excluded by `.gitignore`.
 
@@ -76,18 +76,34 @@ Available keys:
 - `receiver_server`: receiver address used by the Windows agent
 - `receiver_host`: bind address used by `receiver.py` and the embedded receiver in the menu
 - `receiver_port`: TCP listener port
-- `receiver_auth_token`: optional shared token between agent and receiver
+- `models_folder`: directory used for trained model artefacts
+- `receiver_auth_token`: required shared secret used to sign every event with HMAC-SHA256
+- `receiver_tls_enabled`: enables TLS for the receiver/client transport
+- `receiver_tls_certfile`: receiver certificate path when TLS is enabled
+- `receiver_tls_keyfile`: receiver private key path when TLS is enabled
+- `receiver_tls_ca_file`: CA bundle used by the agent to validate the receiver; on the receiver this enables client certificate verification
+- `receiver_tls_server_name`: optional TLS server name override used by the agent
+- `receiver_tls_client_certfile`: client certificate path used by the agent for mTLS
+- `receiver_tls_client_keyfile`: client private key path used by the agent for mTLS
 
 Optional environment overrides:
 
 - `SENTINELAI_CONFIG_PATH`
 - `SENTINELAI_LOGS_DIR`
 - `SENTINELAI_OUTPUT_DIR`
+- `SENTINELAI_MODELS_DIR`
 - `SENTINELAI_DISCORD_WEBHOOK`
 - `SENTINELAI_RECEIVER_SERVER`
 - `SENTINELAI_RECEIVER_HOST`
 - `SENTINELAI_RECEIVER_PORT`
 - `SENTINELAI_RECEIVER_AUTH_TOKEN`
+- `SENTINELAI_RECEIVER_TLS_ENABLED`
+- `SENTINELAI_RECEIVER_TLS_CERTFILE`
+- `SENTINELAI_RECEIVER_TLS_KEYFILE`
+- `SENTINELAI_RECEIVER_TLS_CA_FILE`
+- `SENTINELAI_RECEIVER_TLS_SERVER_NAME`
+- `SENTINELAI_RECEIVER_TLS_CLIENT_CERTFILE`
+- `SENTINELAI_RECEIVER_TLS_CLIENT_KEYFILE`
 - `SENTINELAI_NOTIFICATIONS`
 - `SENTINELAI_EVTX_DIR`
 
