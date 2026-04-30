@@ -5,8 +5,6 @@ SentinelAI is a Windows-focused security log analysis project with two main flow
 - offline analysis of Windows event logs (`.evtx` and `.jsonl`)
 - real-time forwarding from a Windows agent to a receiver with HMAC-authenticated JSONL events and a local console UI
 
-The repository is prepared for public upload. Local runtime artefacts, local config, builds, and generated network logs are excluded by `.gitignore`.
-
 ## Current Scope
 
 - Windows-only
