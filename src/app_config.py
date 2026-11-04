@@ -20,13 +20,12 @@ def build_default_config(file_path: str) -> dict:
         "logs_folder": str(logs_dir),
         "output_folder": str(output_dir),
         "models_folder": str(models_dir),
-        "notifications": True,
         "discord_webhook": "",
         "receiver_server": "",
-        "receiver_host": "0.0.0.0",
+        "receiver_host": "127.0.0.1",
         "receiver_port": 9000,
         "receiver_auth_token": "",
-        "receiver_tls_enabled": False,
+        "receiver_tls_enabled": True,
         "receiver_tls_certfile": "",
         "receiver_tls_keyfile": "",
         "receiver_tls_ca_file": "",
@@ -107,7 +106,6 @@ def _apply_env_overrides(config: dict) -> dict:
         "receiver_tls_server_name": "SENTINELAI_RECEIVER_TLS_SERVER_NAME",
         "receiver_tls_client_certfile": "SENTINELAI_RECEIVER_TLS_CLIENT_CERTFILE",
         "receiver_tls_client_keyfile": "SENTINELAI_RECEIVER_TLS_CLIENT_KEYFILE",
-        "notifications": "SENTINELAI_NOTIFICATIONS",
     }
 
     for key, env_var in env_map.items():
@@ -140,13 +138,10 @@ def normalize_config(config: dict, file_path: str) -> dict:
         Path(defaults["models_folder"]),
         app_root,
     )
-    merged["notifications"] = _parse_bool(
-        merged.get("notifications"),
-        defaults["notifications"],
-    )
+    merged.pop("notifications", None)
     merged["discord_webhook"] = str(merged.get("discord_webhook", "")).strip()
     merged["receiver_server"] = str(merged.get("receiver_server", "")).strip()
-    merged["receiver_host"] = str(merged.get("receiver_host", "0.0.0.0")).strip() or "0.0.0.0"
+    merged["receiver_host"] = str(merged.get("receiver_host", "127.0.0.1")).strip() or "127.0.0.1"
     merged["receiver_port"] = _normalize_port(
         merged.get("receiver_port"),
         defaults["receiver_port"],

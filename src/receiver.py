@@ -34,6 +34,26 @@ CLIENT_TIMEOUT_SECONDS = 30
 RATE_WINDOW_SECONDS = 10
 RATE_LIMIT_EVENTS = 200
 
+# Valores por omissao que nunca devem chegar a producao.
+PLACEHOLDER_TOKENS = {"CHANGE_ME", "CHANGEME", "CHANGE-ME", "CHANGE_ME_TOKEN", "TOKEN", "SECRET"}
+
+
+def validate_auth_token(auth_token: str) -> str:
+    """Valida o token partilhado antes de o receiver arrancar."""
+    token = str(auth_token or "").strip()
+    if not token:
+        raise RuntimeError(
+            "receiver_auth_token em falta: defina um token secreto na configuracao "
+            "(receiver_auth_token) antes de iniciar o receiver."
+        )
+    if token.upper() in PLACEHOLDER_TOKENS:
+        raise RuntimeError(
+            f"receiver_auth_token usa o valor por omissao '{token}'. "
+            "Gere um token novo, guarde-o fora do repositorio e defina-o na "
+            "configuracao antes de iniciar o receiver."
+        )
+    return token
+
 
 def load_config() -> dict:
     return load_app_config(__file__, create_if_missing=True)
@@ -246,7 +266,11 @@ def build_tls_context(cfg: dict):
     certfile = cfg.get("receiver_tls_certfile", "")
     keyfile = cfg.get("receiver_tls_keyfile", "")
     if not certfile or not keyfile:
-        raise RuntimeError("TLS ativo requer receiver_tls_certfile e receiver_tls_keyfile.")
+        raise RuntimeError(
+            "TLS esta ativo por omissao, mas faltam receiver_tls_certfile e "
+            "receiver_tls_keyfile. Defina os certificados OU desative TLS de forma "
+            "explicita na configuracao (receiver_tls_enabled: false)."
+        )
 
     context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     context.load_cert_chain(certfile=certfile, keyfile=keyfile)
@@ -259,8 +283,7 @@ def build_tls_context(cfg: dict):
 
 
 def run_server(host: str, port: int, auth_token: str, cfg: dict | None = None):
-    if not auth_token:
-        raise RuntimeError("receiver_auth_token e obrigatorio. O modo sem autenticacao foi removido.")
+    auth_token = validate_auth_token(auth_token)
 
     cfg = cfg or {}
     tls_context = build_tls_context(cfg)
@@ -323,12 +346,15 @@ def main():
         ]
     )
     cfg  = load_config()
-    host = cfg.get("receiver_host", "0.0.0.0")
+    host = cfg.get("receiver_host", "127.0.0.1")
     port = int(cfg.get("receiver_port", 9000))
     auth_token = cfg.get("receiver_auth_token", "").strip()
-    if not auth_token:
-        raise RuntimeError("receiver_auth_token e obrigatorio. Defina-o na configuracao.")
-    run_server(host, port, auth_token, cfg)
+    try:
+        run_server(host, port, auth_token, cfg)
+    except RuntimeError as e:
+        logging.error(str(e))
+        print(f"\n{col('ERRO AO ARRANCAR:', 'RED')} {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

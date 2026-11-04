@@ -893,7 +893,7 @@ def _server_loop(port):
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     srv.settimeout(1.0)
-    bind_host = config.get("receiver_host", "0.0.0.0")
+    bind_host = config.get("receiver_host", "127.0.0.1")
     try:
         srv.bind((bind_host, port))
         srv.listen(50)
@@ -917,7 +917,7 @@ def show_receiver():
 
     while True:
         port = config.get("receiver_port", 9000)
-        bind_host = config.get("receiver_host", "0.0.0.0")
+        bind_host = config.get("receiver_host", "127.0.0.1")
         auth_token = config.get("receiver_auth_token", "").strip()
         cls()
         console.print(Rule("[bold cyan]Servidor de Recepcao de Logs[/bold cyan]"))
@@ -1020,14 +1020,12 @@ def show_settings():
                      config.get("logs_folder", ""))
         table.add_row("[2]", "Pasta de reports",
                      config.get("output_folder", ""))
-        table.add_row("[3]", "Notificacoes Windows",
-                     "[green]Activas[/green]" if config.get("notifications") else "[red]Inactivas[/red]")
         wh = config.get("discord_webhook", "")
         wh_status = "[green]Configurado[/green]" if wh else "[red]Nao configurado[/red]"
-        table.add_row("[4]", "Discord Webhook",        wh_status)
-        table.add_row("[5]", "Receiver Host", config.get("receiver_host", "0.0.0.0"))
-        table.add_row("[6]", "Receiver Porta", str(config.get("receiver_port", 9000)))
-        table.add_row("[7]", "Receiver Token", mask_secret(config.get("receiver_auth_token", "")))
+        table.add_row("[3]", "Discord Webhook",        wh_status)
+        table.add_row("[4]", "Receiver Host", config.get("receiver_host", "127.0.0.1"))
+        table.add_row("[5]", "Receiver Porta", str(config.get("receiver_port", 9000)))
+        table.add_row("[6]", "Receiver Token", mask_secret(config.get("receiver_auth_token", "")))
         table.add_row("", "", "")
         table.add_row("[0]", "Voltar", "")
         console.print(Align.center(table))
@@ -1052,13 +1050,6 @@ def show_settings():
             time.sleep(1.2)
 
         elif choice == "3":
-            config["notifications"] = not config.get("notifications", True)
-            save_config(config)
-            state = "activas" if config["notifications"] else "inactivas"
-            console.print(f"  [green]Notificacoes {state}.[/green]")
-            time.sleep(1.2)
-
-        elif choice == "4":
             new_val = Prompt.ask("  Discord Webhook URL", default=config.get("discord_webhook", ""))
             config["discord_webhook"] = new_val.strip()
             save_config(config)
@@ -1073,14 +1064,14 @@ def show_settings():
                 console.print("  [yellow]Webhook removido.[/yellow]")
             time.sleep(1.5)
 
-        elif choice == "5":
-            new_val = Prompt.ask("  Endereco de bind do receiver", default=config.get("receiver_host", "0.0.0.0"))
-            config["receiver_host"] = new_val.strip() or "0.0.0.0"
+        elif choice == "4":
+            new_val = Prompt.ask("  Endereco de bind do receiver", default=config.get("receiver_host", "127.0.0.1"))
+            config["receiver_host"] = new_val.strip() or "127.0.0.1"
             save_config(config)
             console.print("  [green]Guardado.[/green]")
             time.sleep(1.2)
 
-        elif choice == "6":
+        elif choice == "5":
             new_val = Prompt.ask("  Porta do receiver", default=str(config.get("receiver_port", 9000)))
             config["receiver_port"] = new_val.strip()
             save_config(config)
@@ -1088,7 +1079,7 @@ def show_settings():
             console.print(f"  [green]Porta guardada:[/green] {config['receiver_port']}")
             time.sleep(1.2)
 
-        elif choice == "7":
+        elif choice == "6":
             new_val = Prompt.ask("  Token de autenticacao do receiver", default=config.get("receiver_auth_token", ""))
             config["receiver_auth_token"] = new_val.strip()
             save_config(config)

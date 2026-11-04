@@ -69,14 +69,13 @@ Available keys:
 
 - `logs_folder`: directory used for input logs and collected network logs
 - `output_folder`: directory used for generated reports
-- `notifications`: enables local notification behavior in the menu flow
 - `discord_webhook`: optional Discord webhook URL
 - `receiver_server`: receiver address used by the Windows agent
-- `receiver_host`: bind address used by `receiver.py` and the embedded receiver in the menu
+- `receiver_host`: bind address used by `receiver.py` and the embedded receiver in the menu (defaults to `127.0.0.1`, set it explicitly to expose the listener on the network)
 - `receiver_port`: TCP listener port
 - `models_folder`: directory used for trained model artefacts
-- `receiver_auth_token`: required shared secret used to sign every event with HMAC-SHA256
-- `receiver_tls_enabled`: enables TLS for the receiver/client transport
+- `receiver_auth_token`: required shared secret used to sign every event with HMAC-SHA256; empty values and placeholders such as `CHANGE_ME` make the receiver refuse to start
+- `receiver_tls_enabled`: enables TLS for the receiver/client transport (defaults to `true`; set it to `false` explicitly to opt out)
 - `receiver_tls_certfile`: receiver certificate path when TLS is enabled
 - `receiver_tls_keyfile`: receiver private key path when TLS is enabled
 - `receiver_tls_ca_file`: CA bundle used by the agent to validate the receiver; on the receiver this enables client certificate verification
@@ -102,7 +101,6 @@ Optional environment overrides:
 - `SENTINELAI_RECEIVER_TLS_SERVER_NAME`
 - `SENTINELAI_RECEIVER_TLS_CLIENT_CERTFILE`
 - `SENTINELAI_RECEIVER_TLS_CLIENT_KEYFILE`
-- `SENTINELAI_NOTIFICATIONS`
 - `SENTINELAI_EVTX_DIR`
 
 ## Running
@@ -175,7 +173,7 @@ Train the anomaly model:
 ## Tests
 
 ```powershell
-.\venv\Scripts\python.exe -m pytest -q .\src\test_sentinel.py
+.\venv\Scripts\python.exe -m pytest -q --cov=src --cov-report=term-missing .\src
 ```
 
 ## Building the Agent

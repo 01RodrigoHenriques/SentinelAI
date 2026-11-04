@@ -24,3 +24,5 @@ sentinelai_config.json
 src/sentinelai_config.json
 sentinelai_config.local.json
 *.tmp
+.coverage
+htmlcov/

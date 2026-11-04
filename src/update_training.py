@@ -6,7 +6,6 @@ import os
 import sys
 import json
 import joblib
-import numpy as np
 from scipy.sparse import hstack, csr_matrix
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import CountVectorizer
@@ -14,6 +13,9 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import classification_report
 
 from app_config import load_app_config
+# As features manuais sao partilhadas com a funcao de previsao para garantir
+# que o treino gera exatamente as 15 caracteristicas usadas por predict().
+from train import extract_features
 
 # ============================================================
 # PATHS
@@ -157,40 +159,6 @@ SYNTHETIC_DATA = [
     ("net user admin Password123! /add", 1),
     ("net localgroup administrators hacker /add", 1),
 ]
-
-# ============================================================
-# FEATURES MANUAIS
-# ============================================================
-
-def extract_features(commands):
-    import re
-    features = []
-    for cmd in commands:
-        cmd_lower = cmd.lower()
-        f = [
-            len(cmd),
-            cmd.count(' '),
-            1 if re.search(r'[A-Za-z0-9+/]{20,}={0,2}', cmd) else 0,
-            1 if '-enc' in cmd_lower or '-encodedcommand' in cmd_lower else 0,
-            1 if '-nop' in cmd_lower or '-noprofile' in cmd_lower else 0,
-            1 if '-w hidden' in cmd_lower or '-windowstyle h' in cmd_lower else 0,
-            1 if '-exec bypass' in cmd_lower or '-executionpolicy bypass' in cmd_lower else 0,
-            1 if 'iex' in cmd_lower or 'invoke-expression' in cmd_lower else 0,
-            1 if 'downloadstring' in cmd_lower or 'webclient' in cmd_lower else 0,
-            1 if 'http://' in cmd_lower or 'https://' in cmd_lower else 0,
-            1 if any(x in cmd_lower for x in ['certutil', 'mshta', 'rundll32', 'regsvr32', 'wscript', 'cscript', 'bitsadmin', 'msiexec /q']) else 0,
-            1 if any(x in cmd_lower for x in ['mimikatz', 'procdump', 'lsass', 'sekurlsa']) else 0,
-            1 if 'net user' in cmd_lower and '/add' in cmd_lower else 0,
-            1 if 'schtasks' in cmd_lower and '/create' in cmd_lower else 0,
-            1 if 'currentversion\\run' in cmd_lower else 0,
-            1 if any(x in cmd_lower for x in ['psexec', 'wmiexec', 'smbexec', 'impacket']) else 0,
-            1 if any(x in cmd_lower for x in ['invoke-mimikatz', 'invoke-bloodhound', 'invoke-kerberoast']) else 0,
-            1 if re.search(r'\b(cmd|powershell)\s*/c\s+.{30,}', cmd_lower) else 0,
-            1 if cmd_lower.count('\\') > 4 else 0,
-            1 if any(x in cmd_lower for x in ['temp\\', 'tmp\\', 'appdata\\local\\temp']) else 0,
-        ]
-        features.append(f)
-    return np.array(features)
 
 # ============================================================
 # MAIN
